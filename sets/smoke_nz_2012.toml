@@ -1,0 +1,18 @@
+# Service check, not a test set: one minute of one station (NZ.WEL) on
+# 2012-06-01, before the held-out pool (2018 on).
+# The catalogue window is the single day 2012-06-01; GeoNet's event service
+# takes no `limit`, so M >= 4 keeps the answer to a few events: the one
+# event-service check the blindness rules allow.
+name = "smoke_nz_2012"
+network = "NZ"
+start = "2012-06-01T12:00:00"
+end = "2012-06-01T12:01:00"
+centre = [-41.284048, 174.768184]
+radius_km = 3.0
+max_stations = 1
+
+[catalog]
+start = "2012-06-01T00:00:00"
+end = "2012-06-02T00:00:00"
+min_magnitude = 4.0
+radius_km = 1000.0

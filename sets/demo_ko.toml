@@ -1,0 +1,10 @@
+# ayzek's development set demo_ko (tools/fetch_ko_data.py in ayzek_code): the
+# 2025-11-10 Sindirgi Mw 4.9. In the test period: pull needs
+# --allow-test-period, and its catalogue is not fetched before the freeze.
+name = "demo_ko"
+network = "KO"
+start = "2025-11-10T18:04:00"
+end = "2025-11-10T18:35:00"
+centre = [39.22333, 28.16556]
+radius_km = 150.0
+max_stations = 6
