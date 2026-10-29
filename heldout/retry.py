@@ -34,13 +34,15 @@ def transient(e):
     return isinstance(e, (OSError, http.client.HTTPException))
 
 
-def call(fn, *args, what="", **kwargs):
-    """fn(*args, **kwargs), made again after each of WAITS while it fails transiently."""
+def call(fn, *args, what="", final=(), **kwargs):
+    """fn(*args, **kwargs), made again after each of WAITS while it fails transiently.
+    An exception of a type in `final` is raised at once, for a caller that
+    answers it otherwise (a catalogue request cut off by its size is halved)."""
     for i in range(len(WAITS) + 1):
         try:
             return fn(*args, **kwargs)
         except Exception as e:  # noqa: BLE001  classified by transient()
-            if i == len(WAITS) or not transient(e):
+            if i == len(WAITS) or isinstance(e, final) or not transient(e):
                 raise
             print(f"  {what or getattr(fn, '__name__', 'request')}: {type(e).__name__}"
                   f" ({str(e).splitlines()[0][:80] if str(e) else ''}); again in {WAITS[i]} s",

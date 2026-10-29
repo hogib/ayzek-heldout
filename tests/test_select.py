@@ -138,6 +138,40 @@ def test_select_refuses_a_pool_without_the_flag(tmp_path):
     assert not any(tmp_path.iterdir())
 
 
+def test_a_request_the_service_breaks_off_is_halved_not_repeated(monkeypatch):
+    import http.client
+    from heldout import catalog, networks
+    calls = []
+
+    def fetch_fdsn(url, a, b, *rest, cut_off_final=False, **kw):
+        calls.append((a, b, cut_off_final))
+        if b - a > dt.timedelta(days=2):
+            raise http.client.IncompleteRead(b"x" * 100, 1000)
+        return [event(0, eid=f"{a:%d}")], url
+    monkeypatch.setattr(catalog, "fetch_fdsn", fetch_fdsn)
+    events, requests = select.group_catalogue(networks.get("NZ"), T0, T0 + dt.timedelta(days=7),
+                                              -41.0, 174.0, 1300.0)
+    # by hand: the week (7 d) and both halves (3.5 d) break off, the four
+    # quarters (1.75 d) answer: 1 + 2 + 4 = 7 requests, 4 answered, each asked
+    # with cut_off_final so that the service is not asked again for the whole
+    assert len(calls) == 7 and len(requests) == 4
+    assert all(c for _, _, c in calls)
+    assert [(a, b) for a, b, _ in calls if b - a <= dt.timedelta(days=2)] == [
+        (T0 + dt.timedelta(hours=42 * i), T0 + dt.timedelta(hours=42 * (i + 1))) for i in range(4)]
+
+
+def test_a_request_broken_off_at_an_hour_is_not_halved_further(monkeypatch):
+    import http.client
+    from heldout import catalog, networks
+
+    def fetch_fdsn(url, a, b, *rest, **kw):
+        raise http.client.IncompleteRead(b"", 10)
+    monkeypatch.setattr(catalog, "fetch_fdsn", fetch_fdsn)
+    with pytest.raises(http.client.IncompleteRead):
+        select.group_catalogue(networks.get("NZ"), T0, T0 + dt.timedelta(hours=1),
+                               -41.0, 174.0, 1300.0)
+
+
 def test_a_request_the_service_refuses_as_too_large_is_halved(monkeypatch):
     import urllib.error
     from heldout import catalog, networks

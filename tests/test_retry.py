@@ -57,6 +57,15 @@ def test_answers_and_other_errors_are_raised_at_once(waits, answer):
     assert waits == []
 
 
+def test_a_final_error_is_raised_at_once_and_others_still_retried(waits):
+    # a cut-off answer is normally retried (above); named final, it is raised
+    # at once, while a dropped connection before it is still waited out once
+    request = failing(ConnectionResetError("reset"), http.client.IncompleteRead(b"x" * 10))
+    with pytest.raises(http.client.IncompleteRead):
+        retry.call(request, final=(http.client.IncompleteRead,))
+    assert waits == [retry.WAITS[0]]
+
+
 def test_a_client_without_a_needed_service_is_made_again(waits, monkeypatch):
     """obspy leaves out a service whose discovery failed; asking that client
     again cannot help, so the client itself is made again."""

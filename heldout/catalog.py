@@ -131,13 +131,19 @@ def fdsn_url(event_url, t0, t1, lat, lon, radius_km, min_mag=None, limit=None):
     return f"{event_url}?{urllib.parse.urlencode(q)}"
 
 
-def fetch_fdsn(event_url, t0, t1, lat, lon, radius_km, min_mag=None, limit=None):
+def fetch_fdsn(event_url, t0, t1, lat, lon, radius_km, min_mag=None, limit=None,
+               cut_off_final=False):
+    """The events of one fdsnws/event request. With cut_off_final, an answer the
+    service breaks off (http.client.IncompleteRead) is raised at once rather than
+    requested again whole, for a caller that halves the request instead."""
+    import http.client
     import io
     import urllib.error
     from obspy import read_events
     url = fdsn_url(event_url, t0, t1, lat, lon, radius_km, min_mag, limit)
+    final = (http.client.IncompleteRead,) if cut_off_final else ()
     try:
-        body = retry.call(_read, url, what="event service")
+        body = retry.call(_read, url, what="event service", final=final)
     except urllib.error.HTTPError as e:
         if e.code in (204, 404):  # 404: some services' "no events"
             return [], url

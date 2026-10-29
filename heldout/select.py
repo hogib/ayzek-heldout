@@ -14,8 +14,9 @@ Every step is fixed by the protocol:
    probe's own rules (fetch.probe_rows).
 2. The group's catalogue over the period, every magnitude, in requests of a
    week (GeoNet's monthly answers run to 25 MB of QuakeML and broke off), a
-   request the service refuses as too large (HTTP 413) being halved until it
-   answers, after the canary check.
+   request the service refuses as too large (HTTP 413) or breaks off
+   (IncompleteRead; GeoNet's weekly answers within 1300 km reach 20-30 MB)
+   being halved until it answers, after the canary check.
 3. Sequences: in time order, each event of M >= 4.5 with at least five usable
    stations within 150 km of its epicentre starts a sequence, replayed from 10
    min before it for 3 h on the 8 nearest of those stations, unless it lies
@@ -186,22 +187,35 @@ def quiet_windows(selected, events, t0, t1, seed, covered, relaxed=False):
 
 def group_catalogue(info, t0, t1, lat, lon, radius_km):
     """Every catalogue event of the region over [t0, t1), in weekly requests;
-    one the service refuses as too large (HTTP 413) is halved until it answers
+    one the service refuses as too large (HTTP 413) or breaks off before its
+    end (IncompleteRead, not requested again whole) is halved until it answers
     (down to an hour)."""
+    import http.client
     import urllib.error
     events, requests = [], []
+
+    def halve(a, b):
+        mid = a + (b - a) / 2
+        fetch(a, mid)
+        fetch(mid, b)
 
     def fetch(a, b):
         try:
             if info.catalog == "afad":
                 evs, url = catalog.fetch_afad(a, b, lat, lon, radius_km)
             else:
-                evs, url = catalog.fetch_fdsn(info.event_url, a, b, lat, lon, radius_km)
+                evs, url = catalog.fetch_fdsn(info.event_url, a, b, lat, lon, radius_km,
+                                              cut_off_final=True)
         except urllib.error.HTTPError as e:
             if e.code == 413 and b - a > dt.timedelta(hours=1):
-                mid = a + (b - a) / 2
-                fetch(a, mid)
-                fetch(mid, b)
+                halve(a, b)
+                return
+            raise
+        except http.client.IncompleteRead:
+            if b - a > dt.timedelta(hours=1):
+                print(f"  event service broke off {a:%Y-%m-%d %H:%M} to {b:%Y-%m-%d %H:%M};"
+                      " halving", file=sys.stderr)
+                halve(a, b)
                 return
             raise
         if len(evs) >= 10_000:
