@@ -136,3 +136,22 @@ def test_select_refuses_a_pool_without_the_flag(tmp_path):
         select.cmd_select("nz", dt.datetime(2023, 6, 1), dt.datetime(2023, 7, 1), "x",
                           tmp_path)
     assert not any(tmp_path.iterdir())
+
+
+def test_a_request_the_service_refuses_as_too_large_is_halved(monkeypatch):
+    import urllib.error
+    from heldout import catalog, networks
+    calls = []
+
+    def fetch_fdsn(url, a, b, *rest, **kw):
+        calls.append((a, b))
+        if b - a > dt.timedelta(days=2):
+            raise urllib.error.HTTPError(url, 413, "Request Entity Too Large", {}, None)
+        return [event(0, eid=f"{a:%d}")], url
+    monkeypatch.setattr(catalog, "fetch_fdsn", fetch_fdsn)
+    events, requests = select.group_catalogue(networks.get("HL"), T0, T0 + dt.timedelta(days=7),
+                                              38.5, 23.5, 950.0)
+    # the week is refused, both halves (3.5 d) are refused, the quarters answer
+    assert len(calls) == 7 and len(requests) == 4
+    assert all(b - a <= dt.timedelta(days=2) for a, b in [c for c in calls if c in
+               [(a, b) for a, b in calls if b - a <= dt.timedelta(days=2)]])

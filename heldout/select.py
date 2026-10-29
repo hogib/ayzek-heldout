@@ -13,8 +13,9 @@ Every step is fixed by the protocol:
    channels at 100 Hz and at least 90% coverage over the whole period, by the
    probe's own rules (fetch.probe_rows).
 2. The group's catalogue over the period, every magnitude, in requests of a
-   week (GeoNet's monthly answers run to 25 MB of QuakeML and broke off) after
-   the canary check.
+   week (GeoNet's monthly answers run to 25 MB of QuakeML and broke off), a
+   request the service refuses as too large (HTTP 413) being halved until it
+   answers, after the canary check.
 3. Sequences: in time order, each event of M >= 4.5 with at least five usable
    stations within 150 km of its epicentre starts a sequence, replayed from 10
    min before it for 3 h on the 8 nearest of those stations, unless it lies
@@ -184,19 +185,35 @@ def quiet_windows(selected, events, t0, t1, seed, covered, relaxed=False):
 
 
 def group_catalogue(info, t0, t1, lat, lon, radius_km):
-    """Every catalogue event of the region over [t0, t1), in weekly requests."""
-    events, requests, a = [], [], t0
+    """Every catalogue event of the region over [t0, t1), in weekly requests;
+    one the service refuses as too large (HTTP 413) is halved until it answers
+    (down to an hour)."""
+    import urllib.error
+    events, requests = [], []
+
+    def fetch(a, b):
+        try:
+            if info.catalog == "afad":
+                evs, url = catalog.fetch_afad(a, b, lat, lon, radius_km)
+            else:
+                evs, url = catalog.fetch_fdsn(info.event_url, a, b, lat, lon, radius_km)
+        except urllib.error.HTTPError as e:
+            if e.code == 413 and b - a > dt.timedelta(hours=1):
+                mid = a + (b - a) / 2
+                fetch(a, mid)
+                fetch(mid, b)
+                return
+            raise
+        if len(evs) >= 10_000:
+            raise SystemExit(f"{url}: {len(evs)} events in one request, a service limit "
+                             "may have cut the list")
+        events.extend(e for e in evs if a <= e.time < b)
+        requests.append(url)
+
+    a = t0
     while a < t1:
         b = min(a + CATALOG_CHUNK, t1)
-        if info.catalog == "afad":
-            evs, url = catalog.fetch_afad(a, b, lat, lon, radius_km)
-        else:
-            evs, url = catalog.fetch_fdsn(info.event_url, a, b, lat, lon, radius_km)
-        if len(evs) >= 10_000:
-            raise SystemExit(f"{url}: {len(evs)} events in one week, a service limit "
-                             "may have cut the list; use shorter requests")
-        events += [e for e in evs if a <= e.time < b]
-        requests.append(url)
+        fetch(a, b)
         a = b
     events.sort(key=lambda e: e.time)
     return events, requests
