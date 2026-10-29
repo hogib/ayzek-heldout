@@ -1,0 +1,14 @@
+# Per-station STA/LTA tuning data (protocol section 4), window 1 of 4, drawn by tools/make_tuning_sets.py (seed 20221231) from the
+# pre-pool period 2022-01-01 to 2023-01-01.
+name = "tune_greece_1"
+network = ["HL", "HT", "HA", "HP", "HC"]
+start = "2022-01-15T19:08:00"
+end = "2022-01-16T01:08:00"
+centre = [38.5, 23.5]
+radius_km = 650.0
+max_stations = 300
+
+[catalog]
+start = "2022-01-15T18:08:00"
+end = "2022-01-16T01:08:00"
+radius_km = 950.0

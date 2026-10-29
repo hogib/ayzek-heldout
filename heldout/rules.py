@@ -6,14 +6,21 @@ code, Z, N or 1, E or 2. A station passes if one location code has HHZ plus
 HHN/HHE (or HH1/HH2), every epoch of those three channels overlapping the
 span is at 100 Hz, and their epochs cover the whole span.
 
-Test period: the held-out pool starts on 2018-01-01. Until the method is
-frozen nobody should pull waveforms or event lists from it, so `pull` and
-`catalog` refuse a span that reaches into it unless asked explicitly.
+Test period: the held-out pools of the protocol (ayzek_code
+docs/protocol-heldout.md, section 3) start on 2023-01-01 for Greece and New
+Zealand and on 2026-08-30 for KO. Until the method is frozen nobody should pull
+waveforms or event lists from them, so `pull` and `catalog` refuse a span that
+reaches into a pool unless asked explicitly. A network without a pool of its
+own is held to the earliest one.
 """
 import datetime as dt
 from dataclasses import dataclass
 
-TEST_PERIOD_START = dt.datetime(2018, 1, 1)
+POOL_START = {"HL": dt.datetime(2023, 1, 1), "HT": dt.datetime(2023, 1, 1),
+              "HA": dt.datetime(2023, 1, 1), "HP": dt.datetime(2023, 1, 1),
+              "HC": dt.datetime(2023, 1, 1), "NZ": dt.datetime(2023, 1, 1),
+              "KO": dt.datetime(2026, 8, 30)}
+TEST_PERIOD_START = min(POOL_START.values())
 RATE_HZ = 100.0
 HORIZONTALS = (("HHN", "HHE"), ("HH1", "HH2"))
 
@@ -22,12 +29,15 @@ class TestPeriodError(RuntimeError):
     pass
 
 
-def check_test_period(start, end, allow, what="span"):
-    """Raises unless [start, end) lies wholly before the test period or `allow`."""
-    if end > TEST_PERIOD_START and not allow:
+def check_test_period(start, end, allow, what="span", networks=()):
+    """Raises unless [start, end) lies wholly before the pools of `networks`
+    (of every network, if none is given) or `allow`."""
+    pool = min((POOL_START.get(n, TEST_PERIOD_START) for n in networks),
+               default=TEST_PERIOD_START)
+    if end > pool and not allow:
         raise TestPeriodError(
             f"{what} {start:%Y-%m-%dT%H:%M:%S} to {end:%Y-%m-%dT%H:%M:%S} reaches into "
-            f"the held-out test period (from {TEST_PERIOD_START:%Y-%m-%d}); pass "
+            f"the held-out test period (from {pool:%Y-%m-%d}); pass "
             f"--allow-test-period only after the method is frozen")
 
 

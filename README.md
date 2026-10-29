@@ -16,22 +16,23 @@ pre-registered protocol (`survey/survey.py` regenerates its tables).
 
 ## Blindness rules (until the method is frozen)
 
-The test pool is everything from **2018-01-01** on. Before the freeze:
+The held-out pools (ayzek_code `docs/protocol-heldout.md`, section 3) start on
+**2023-01-01** for Greece (HL, HT, HA, HP, HC) and New Zealand (NZ) and on
+**2026-08-30** for KO. Before the freeze:
 
-- No waveform data is downloaded, except one 60 s request per network (one
-  station, its HH channels) on 2012-06-01 12:00:00 UTC to check the
-  dataselect service and the decoding (the `sets/smoke_*_2012.toml` sets).
-- No earthquake catalogue is queried for event lists from 2018 on. Each event
-  service may be checked once on a single day in 2012, limited to a few
-  events. Events are not counted, listed or summarised by region.
+- No waveform or event list is fetched from a pool.
+- Before the pools, the tool fetched: the 2012 service checks (`smoke_*`, one
+  minute each), the 2012 dry runs (`dryrun_*`, 30 min), the rotation check
+  (`rotcheck_nz_2012`), KO's development set `demo_ko`, and the per-station
+  STA/LTA tuning windows (`tune_*`, four 6 h windows per network group, drawn by
+  `tools/make_tuning_sets.py`), with their catalogues.
 - Station metadata (fdsnws/station) and availability listings (fdsnws/
   availability, or the GeoNet bucket's object listing) are allowed for any
   period: they carry no seismic content.
-- The tool is not run against any period from 2018 on. `pull` and `catalog`
-  enforce this: they refuse a window that reaches 2018-01-01 or later
-  (a span *ending* after it, so also one that starts before and runs into
-  it) unless `--allow-test-period` is given. `probe` reads metadata and
-  availability only and is not guarded.
+- `pull` and `catalog` refuse a window that reaches into the pool of any of
+  its networks (a span *ending* after the pool's start, so also one that
+  starts before and runs into it) unless `--allow-test-period` is given.
+  `probe` reads metadata and availability only and is not guarded.
 
 The one exception made so far is ayzek's development set `demo_ko`
 (2025-11-10, already used for development), pulled with

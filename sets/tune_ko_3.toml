@@ -1,0 +1,14 @@
+# Per-station STA/LTA tuning data (protocol section 4), window 3 of 4, drawn by tools/make_tuning_sets.py (seed 20221231) from the
+# pre-pool period 2026-07-01 to 2026-08-30.
+name = "tune_ko_3"
+network = "KO"
+start = "2026-08-25T17:14:00"
+end = "2026-08-25T23:14:00"
+centre = [39.0, 35.0]
+radius_km = 1100.0
+max_stations = 300
+
+[catalog]
+start = "2026-08-25T16:14:00"
+end = "2026-08-25T23:14:00"
+radius_km = 1400.0

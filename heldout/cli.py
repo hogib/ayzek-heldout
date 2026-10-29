@@ -6,7 +6,7 @@
     heldout catalog  sets/demo_ko.toml   # the network's catalogue -> catalog.csv
     heldout validate sets/demo_ko.toml   # dataset.json against the files
 
-`pull` and `catalog` refuse any window reaching 2018-01-01 or later (the
+`pull` and `catalog` refuse any window reaching into a network's held-out pool (the
 held-out test period) unless --allow-test-period is given. `probe` reads
 metadata and availability only and is never guarded. Output goes to
 DATA/<set>/ (--data, default ./data).
@@ -30,7 +30,7 @@ def main(argv=None):
         s.add_argument("--data", default="data", help="parent of the set directory")
         if name in ("pull", "catalog"):
             s.add_argument("--allow-test-period", action="store_true",
-                           help="allow windows from 2018-01-01 on (only after the freeze)")
+                           help="allow windows in the held-out pools (only after the freeze)")
         if name == "pull":
             s.add_argument("--force", action="store_true", help="re-download files present")
     a = p.parse_args(argv)

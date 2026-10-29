@@ -84,20 +84,28 @@ def test_check_traces_keeps_only_the_chosen_100_hz_integers():
 
 # ---- the test-period guard ---------------------------------------------------
 
-def test_guard_allows_spans_before_2018():
+def test_guard_allows_spans_before_the_pools():
     rules.check_test_period(dt.datetime(2012, 6, 1, 12), dt.datetime(2012, 6, 1, 12, 1), False)
-    rules.check_test_period(dt.datetime(2017, 12, 31), dt.datetime(2018, 1, 1), False)
+    rules.check_test_period(dt.datetime(2022, 12, 31), dt.datetime(2023, 1, 1), False,
+                            networks=("HL", "NZ"))
+    # KO's pool starts later: its development sets and tuning windows pass.
+    rules.check_test_period(dt.datetime(2025, 11, 10, 18, 4), dt.datetime(2025, 11, 10, 18, 35),
+                            False, networks=("KO",))
+    rules.check_test_period(dt.datetime(2026, 8, 28, 18), dt.datetime(2026, 8, 30), False,
+                            networks=("KO",))
 
 
-@pytest.mark.parametrize("start, end", [
-    (dt.datetime(2018, 1, 1), dt.datetime(2018, 1, 2)),
-    (dt.datetime(2025, 11, 10, 18, 4), dt.datetime(2025, 11, 10, 18, 35)),
-    (dt.datetime(2017, 12, 31), dt.datetime(2018, 1, 1, 0, 0, 1)),  # reaches into it
+@pytest.mark.parametrize("start, end, networks", [
+    (dt.datetime(2023, 1, 1), dt.datetime(2023, 1, 2), ("HL",)),
+    (dt.datetime(2022, 12, 31), dt.datetime(2023, 1, 1, 0, 0, 1), ("NZ",)),  # reaches into it
+    (dt.datetime(2026, 8, 29, 23), dt.datetime(2026, 8, 30, 0, 0, 1), ("KO",)),
+    (dt.datetime(2025, 11, 10, 18, 4), dt.datetime(2025, 11, 10, 18, 35), ()),  # no network: earliest
+    (dt.datetime(2024, 3, 1), dt.datetime(2024, 3, 2), ("XX",)),  # unknown network: earliest
 ])
-def test_guard_refuses_the_test_period(start, end):
+def test_guard_refuses_the_pools(start, end, networks):
     with pytest.raises(rules.TestPeriodError, match="--allow-test-period"):
-        rules.check_test_period(start, end, False)
-    rules.check_test_period(start, end, True)
+        rules.check_test_period(start, end, False, networks=networks)
+    rules.check_test_period(start, end, True, networks=networks)
 
 
 def test_azimuth_offsets():

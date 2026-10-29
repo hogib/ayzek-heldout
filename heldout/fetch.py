@@ -229,7 +229,7 @@ def measure(path, channels):
 
 
 def cmd_pull(cfg, data, allow_test_period=False, force=False):
-    rules.check_test_period(cfg.start, cfg.end, allow_test_period)
+    rules.check_test_period(cfg.start, cfg.end, allow_test_period, networks=cfg.networks)
     from obspy import Stream
     from obspy.clients.fdsn.header import FDSNNoDataException
     out = set_dir(data, cfg)
@@ -328,7 +328,8 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
 
 def cmd_catalog(cfg, data, allow_test_period=False):
     t0, t1 = cfg.catalog_window()
-    rules.check_test_period(t0, t1, allow_test_period, what="catalogue window")
+    rules.check_test_period(t0, t1, allow_test_period, what="catalogue window",
+                            networks=cfg.networks)
     out = set_dir(data, cfg)
     ds_path = out / "dataset.json"
     if not ds_path.exists():

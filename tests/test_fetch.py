@@ -58,27 +58,27 @@ def test_cli_exit_code_on_empty_set(tmp_path, monkeypatch):
 
 
 def test_pull_guard_fires_before_any_request(tmp_path, monkeypatch, capsys):
-    cfg = config.parse({**SMOKE, "start": "2019-03-01T00:00:00", "end": "2019-03-01T01:00:00"})
+    cfg = config.parse({**SMOKE, "start": "2024-03-01T00:00:00", "end": "2024-03-01T01:00:00"})
     monkeypatch.setattr(fetch, "client", lambda cfg: Forbidden())
     with pytest.raises(rules.TestPeriodError):
         fetch.cmd_pull(cfg, tmp_path)
     p = tmp_path / "t.toml"
     p.write_text("\n".join(f"{k} = {json.dumps(v)}" for k, v in
-                           {**SMOKE, "start": "2019-03-01T00:00:00",
-                            "end": "2019-03-01T01:00:00"}.items()))
+                           {**SMOKE, "start": "2024-03-01T00:00:00",
+                            "end": "2024-03-01T01:00:00"}.items()))
     assert cli.main(["pull", str(p), "--data", str(tmp_path)]) == 2
     assert "test period" in capsys.readouterr().err
     assert not any(tmp_path.glob("smoke/*"))
 
 
 def test_catalog_guard_covers_the_lead_in(tmp_path, monkeypatch):
-    # A span in 2018-01-10 has its 30-day lead-in before 2018 but itself is in.
-    cfg = config.parse({**SMOKE, "start": "2018-01-10T00:00:00", "end": "2018-01-10T01:00:00"})
+    # A span on 2023-01-10 has its 30-day lead-in before NZ's pool but itself is in.
+    cfg = config.parse({**SMOKE, "start": "2023-01-10T00:00:00", "end": "2023-01-10T01:00:00"})
     with pytest.raises(rules.TestPeriodError, match="catalogue window"):
         fetch.cmd_catalog(cfg, tmp_path)
     # A 2012 span whose catalogue window was moved into the test period.
-    cfg = config.parse({**SMOKE, "catalog": {"start": "2019-01-01T00:00:00",
-                                             "end": "2019-01-02T00:00:00"}})
+    cfg = config.parse({**SMOKE, "catalog": {"start": "2024-01-01T00:00:00",
+                                             "end": "2024-01-02T00:00:00"}})
     with pytest.raises(rules.TestPeriodError):
         fetch.cmd_catalog(cfg, tmp_path)
 
