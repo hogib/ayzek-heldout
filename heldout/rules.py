@@ -14,6 +14,8 @@ reaches into a pool unless asked explicitly. A network without a pool of its
 own is held to the earliest one.
 """
 import datetime as dt
+import itertools
+import math
 from dataclasses import dataclass
 
 POOL_START = {"HL": dt.datetime(2023, 1, 1), "HT": dt.datetime(2023, 1, 1),
@@ -49,6 +51,7 @@ class ChannelEpoch:
     start: dt.datetime
     end: dt.datetime | None   # None: open
     azimuth: float | None = None
+    dip: float | None = None
 
 
 @dataclass(frozen=True)
@@ -103,8 +106,48 @@ def epochs_from_station(station):
     """ChannelEpochs from an obspy Station (channel level)."""
     return [ChannelEpoch(c.location_code, c.code, float(c.sample_rate),
                          c.start_date.datetime, c.end_date.datetime if c.end_date else None,
-                         None if c.azimuth is None else float(c.azimuth))
+                         None if c.azimuth is None else float(c.azimuth),
+                         None if c.dip is None else float(c.dip))
             for c in station.channels]
+
+
+# Below this |det| of the three components' unit vectors the horizontals cannot
+# be rotated to north and east (NZ.MKTZ from 2025-09-30: HH2 dips 90 degrees,
+# along HHZ).
+MIN_ORIENTATION_DET = 0.5
+
+
+def _unit(azimuth, dip):
+    """Unit vector (north, east, down) of a component, SEED angles in degrees."""
+    a, d = math.radians(azimuth), math.radians(dip)
+    return (math.cos(d) * math.cos(a), math.cos(d) * math.sin(a), math.sin(d))
+
+
+def orientation_det(epochs, location, channels, t0, t1):
+    """Smallest |det| of the three components' unit vectors at any time of the
+    span when all three have an epoch in force (1 for vertical, north and east),
+    or None where an angle is missing."""
+    eps = [e for e in epochs if e.location == location and e.code in channels
+           and e.start < t1 and (e.end is None or e.end > t0)]
+    cuts = sorted({t0, t1, *(e.start for e in eps if t0 < e.start < t1),
+                   *(e.end for e in eps if e.end is not None and t0 < e.end < t1)})
+    worst = None
+    for a, b in itertools.pairwise(cuts):
+        t = a + (b - a) / 2
+        rows = []
+        for code in channels:
+            now = [e for e in eps if e.code == code and e.start <= t and (e.end is None or e.end > t)]
+            if not now:
+                break                       # a gap between epochs: nothing recorded
+            if now[0].azimuth is None or now[0].dip is None:
+                return None
+            rows.append(_unit(now[0].azimuth, now[0].dip))
+        if len(rows) < 3:
+            continue
+        (a1, a2, a3), (b1, b2, b3), (c1, c2, c3) = rows
+        det = abs(a1 * (b2 * c3 - b3 * c2) - a2 * (b1 * c3 - b3 * c1) + a3 * (b1 * c2 - b2 * c1))
+        worst = det if worst is None else min(worst, det)
+    return worst
 
 
 def azimuth_offsets(epochs, location, channels, t0, t1):

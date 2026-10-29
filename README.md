@@ -79,6 +79,9 @@ which has none, whether each UTC day's file exists in GeoNet's open-data
 bucket: an upper bound). The nearest `max_stations` with at least
 `min_coverage` on every channel are chosen; a station code already chosen
 from another network is refused, since ayzek keys stations on the code alone.
+A station is also refused when its three components' unit vectors (from
+azimuth and dip) have |det| below 0.5 at any time of the span: its horizontals
+cannot be rotated to N/E (NZ.MKTZ from 2025-09-30, whose HH2 dips 90 degrees).
 It writes `stations.json` (every candidate and why it was kept or not), the
 chosen stations' StationXML (`stationxml/`, response level), `stations.csv`
 and `pd_gain.csv`. A vertical epoch gets a gain row only when its velocity
@@ -98,7 +101,9 @@ station (seconds per component, bytes), the request failures, the retrieval
 time in UTC, the tool's git commit (`+dirty` if uncommitted), the citations
 and licences. `dataset.json` is validated first; if no station returned data,
 nothing is written and the exit status is 2. A file is written only when it
-has data, via a temporary file.
+has data, via a temporary file. A station whose horizontals the rotation to
+N/E refuses (orientations the probe did not see) is left out and listed among
+the failures; the set goes on.
 
 **catalog** queries the network's own catalogue over the span plus
 `lead_days` before it and writes `catalog.csv` in the AFAD CSV that ayzek's

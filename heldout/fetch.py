@@ -120,6 +120,8 @@ def probe_rows(cfg, c):
         ch = rules.choose_channels(eps, cfg.start, cfg.end)
         az = (rules.azimuth_offsets(eps, ch.location, ch.channels, cfg.start, cfg.end)
               if ch.ok else {})
+        det = (rules.orientation_det(eps, ch.location, ch.channels, cfg.start, cfg.end)
+               if ch.ok else None)
         rows.append({"network": net, "station": sta, "lat": float(st.latitude),
                      "lon": float(st.longitude), "elevation_m": float(st.elevation),
                      "distance_km": round(d, 1), "location": ch.location,
@@ -130,6 +132,10 @@ def probe_rows(cfg, c):
             rows[-1]["ok"] = False
             rows[-1]["reason"] = (f"horizontals {az} off N/E by more than "
                                   f"{cfg.max_azimuth_offset_deg:g} deg")
+        if rows[-1]["ok"] and det is not None and det < rules.MIN_ORIENTATION_DET:
+            rows[-1]["ok"] = False
+            rows[-1]["reason"] = (f"component orientations not independent (|det| {det:.2f}), "
+                                  "horizontals cannot be rotated to N/E")
         if rows[-1]["ok"] and cfg.stations and f"{net}.{sta}" not in cfg.stations:
             rows[-1]["ok"] = False
             rows[-1]["reason"] = "not in the set's station list"
@@ -322,7 +328,12 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
             if needs_rotation(r["channels"], r.get("azimuth_offset_deg") or {}):
                 from obspy import read_inventory
                 inv = read_inventory(str(out / "stationxml" / f"{tag}.xml"))
-                st = rotate_to_ne(st, inv)
+                try:
+                    st = rotate_to_ne(st, inv)
+                except Exception as e:  # noqa: BLE001  orientations the probe could not see
+                    failures.append(f"{tag}: rotation to N/E failed ({e}); station left out")
+                    print(f"  {failures[-1]}")
+                    continue
                 print(f"  {tag}: rotated {'/'.join(r['channels'][1:])} to N/E "
                       f"(offsets {r.get('azimuth_offset_deg')})")
             write_mseed(st, dest)
