@@ -174,6 +174,35 @@ def cmd_probe(cfg, data):
 
 # ---- pull --------------------------------------------------------------------
 
+# Horizontals more than this far from north and east (or named 1 and 2) are
+# rotated to north and east before they are written (held-out protocol,
+# section 2): ayzek reads the second and third channels as N and E.
+ROTATE_ABOVE_DEG = 0.5
+
+
+def needs_rotation(channels, offsets):
+    return (any(c[-1] in "12" for c in channels[1:])
+            or any(v is None or v > ROTATE_ABOVE_DEG for v in offsets.values()))
+
+
+def rotate_to_ne(stream, inventory):
+    """The stream with its horizontals rotated to north and east, by the
+    azimuths and dips of the station's metadata in force at each segment
+    (obspy's rotate "->ZNE"), on the stretches where all three components are
+    present, and rounded back to integer counts. The vertical passes through
+    unchanged when its dip is -90 or 90 degrees."""
+    import numpy as np
+    out = stream.copy()
+    # One combination only: after Z12 is rotated, the new N and E channels are
+    # not in the metadata, and a second pass over "ZNE" would look them up.
+    named_12 = any(tr.stats.channel[-1] in "12" for tr in out)
+    out.rotate(method="->ZNE", inventory=inventory,
+               components=("Z12",) if named_12 else ("ZNE",))
+    for tr in out:
+        tr.data = np.rint(tr.data).astype(np.int64)
+    return out
+
+
 def write_mseed(stream, dest):
     """512-byte big-endian Steim2 records, which is what ayzek's reader takes."""
     import numpy as np
@@ -247,12 +276,21 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
             st.trim(t0, t1, nearest_sample=False)
             st.merge(method=1, fill_value=None)
             st = st.split()
+            if needs_rotation(r["channels"], r.get("azimuth_offset_deg") or {}):
+                from obspy import read_inventory
+                inv = read_inventory(str(out / "stationxml" / f"{tag}.xml"))
+                st = rotate_to_ne(st, inv)
+                print(f"  {tag}: rotated {'/'.join(r['channels'][1:])} to N/E "
+                      f"(offsets {r.get('azimuth_offset_deg')})")
             write_mseed(st, dest)
-        secs = measure(dest, r["channels"])
+        rotated = needs_rotation(r["channels"], r.get("azimuth_offset_deg") or {})
+        channels = [r["channels"][0], "HHN", "HHE"] if rotated else r["channels"]
+        secs = measure(dest, channels)
         size = dest.stat().st_size
         got.append({**{k: r[k] for k in ("network", "station", "location", "channels", "lat",
                                          "lon", "elevation_m", "distance_km",
                                          "azimuth_offset_deg")},
+                    "rotated_to_ne": rotated, "channels_written": channels,
                     "file": dest.name, "seconds_per_component": secs, "bytes": size,
                     "megabytes": round(size / 1e6, 2),
                     "missing_components": [k for k, v in secs.items() if v == 0]})
