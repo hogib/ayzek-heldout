@@ -28,9 +28,21 @@ def utc(t):
     return UTCDateTime(t.replace(tzinfo=dt.UTC) if t.tzinfo is None else t)
 
 
-def client(cfg):
+def client(cfg, *need):
+    """An FDSN client of cfg.base_url with the services `need`. obspy discovers
+    the services once, when the client is made, and leaves out one whose
+    discovery failed; such a client is made again, since asking it again for
+    that service cannot succeed."""
     from obspy.clients.fdsn import Client
-    return retry.call(Client, base_url=cfg.base_url, timeout=300, what=f"{cfg.base_url} services")
+    from obspy.clients.fdsn.header import FDSNNoServiceException
+
+    def make():
+        c = Client(base_url=cfg.base_url, timeout=300)
+        missing = [s for s in need if s not in c.services]
+        if missing:
+            raise FDSNNoServiceException(f"no {', '.join(missing)} service discovered")
+        return c
+    return retry.call(make, what=f"{cfg.base_url} services")
 
 
 def services(cfg):
@@ -89,7 +101,7 @@ def cmd_probe(cfg, data):
     """Metadata and availability only: chooses the stations, writes stations.json."""
     from obspy.clients.fdsn.header import FDSNNoDataException
     out = set_dir(data, cfg)
-    c = client(cfg)
+    c = client(cfg, "station")
     t0, t1 = utc(cfg.start), utc(cfg.end)
     try:
         inv = retry.call(c.get_stations, network=",".join(cfg.networks), channel="HH?",
@@ -240,7 +252,7 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
     spec = json.loads(spec_path.read_text())
     if spec["config"] != cfg.to_json():
         raise SystemExit(f"{spec_path} was probed with another config; probe again")
-    c = client(cfg)
+    c = client(cfg, "dataselect")
     t0, t1 = utc(cfg.start), utc(cfg.end)
     got, failures = [], []
     for r in spec["chosen"]:

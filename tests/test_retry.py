@@ -55,3 +55,22 @@ def test_answers_and_other_errors_are_raised_at_once(waits, answer):
     with pytest.raises(type(answer)):
         retry.call(failing(answer))
     assert waits == []
+
+
+def test_a_client_without_a_needed_service_is_made_again(waits, monkeypatch):
+    """obspy leaves out a service whose discovery failed; asking that client
+    again cannot help, so the client itself is made again."""
+    import types
+    from heldout import fetch
+    made = []
+
+    class Client:
+        def __init__(self, base_url, timeout):
+            made.append(base_url)
+            self.services = {"dataselect": {}, "event": {}} if len(made) == 1 else \
+                {"dataselect": {}, "event": {}, "station": {}}
+
+    monkeypatch.setattr("obspy.clients.fdsn.Client", Client)
+    c = fetch.client(types.SimpleNamespace(base_url="https://service"), "station")
+    assert "station" in c.services and len(made) == 2
+    assert waits == [retry.WAITS[0]]

@@ -41,7 +41,7 @@ def probed(tmp_path, cfg):
 def test_empty_pull_fails_and_writes_nothing(tmp_path, monkeypatch):
     cfg = config.parse(SMOKE)
     out = probed(tmp_path, cfg)
-    monkeypatch.setattr(fetch, "client", lambda cfg: NoData())
+    monkeypatch.setattr(fetch, "client", lambda cfg, *need: NoData())
     assert fetch.cmd_pull(cfg, tmp_path) == 2
     assert NoData.calls == 1                       # one hour-long request for 60 s
     assert not (out / "dataset.json").exists()
@@ -53,13 +53,13 @@ def test_cli_exit_code_on_empty_set(tmp_path, monkeypatch):
     p.write_text("\n".join(f"{k} = {json.dumps(v)}" for k, v in SMOKE.items()))
     (tmp_path / "data").mkdir()
     probed(tmp_path / "data", config.load(p))
-    monkeypatch.setattr(fetch, "client", lambda cfg: NoData())
+    monkeypatch.setattr(fetch, "client", lambda cfg, *need: NoData())
     assert cli.main(["pull", str(p), "--data", str(tmp_path / "data")]) == 2
 
 
 def test_pull_guard_fires_before_any_request(tmp_path, monkeypatch, capsys):
     cfg = config.parse({**SMOKE, "start": "2024-03-01T00:00:00", "end": "2024-03-01T01:00:00"})
-    monkeypatch.setattr(fetch, "client", lambda cfg: Forbidden())
+    monkeypatch.setattr(fetch, "client", lambda cfg, *need: Forbidden())
     with pytest.raises(rules.TestPeriodError):
         fetch.cmd_pull(cfg, tmp_path)
     p = tmp_path / "t.toml"
