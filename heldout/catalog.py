@@ -18,6 +18,13 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 
+from . import retry
+
+
+def _read(url):
+    with urllib.request.urlopen(url, timeout=300) as f:
+        return f.read()
+
 HEADER = ["Date", "Longitude", "Latitude", "Depth", "Rms", "Type", "Magnitude",
           "Location", "EventID"]
 NOT_EVENTS = {"not existing", "not reported", "other event"}
@@ -130,8 +137,7 @@ def fetch_fdsn(event_url, t0, t1, lat, lon, radius_km, min_mag=None, limit=None)
     from obspy import read_events
     url = fdsn_url(event_url, t0, t1, lat, lon, radius_km, min_mag, limit)
     try:
-        with urllib.request.urlopen(url, timeout=300) as f:
-            body = f.read()
+        body = retry.call(_read, url, what="event service")
     except urllib.error.HTTPError as e:
         if e.code in (204, 404):  # 404: some services' "no events"
             return [], url
@@ -171,6 +177,5 @@ def from_afad(records):
 
 def fetch_afad(t0, t1, lat, lon, radius_km, min_mag=None, limit=None):
     url = afad_url(t0, t1, lat, lon, radius_km, min_mag, limit)
-    with urllib.request.urlopen(url, timeout=300) as f:
-        body = f.read()
+    body = retry.call(_read, url, what="AFAD event service")
     return from_afad(json.loads(body) if body.strip() else []), url

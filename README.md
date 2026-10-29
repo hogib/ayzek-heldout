@@ -83,8 +83,8 @@ It writes `stations.json` (every candidate and why it was kept or not), the
 chosen stations' StationXML (`stationxml/`, response level), `stations.csv`
 and `pd_gain.csv`. No waveform is requested.
 
-**pull** downloads each chosen station hour by hour (a failure costs one
-hour), keeps only the chosen location and three channels at 100 Hz with
+**pull** downloads each chosen station hour by hour (a failure that outlasts
+the retries below costs one hour, and is listed in `dataset.json`), keeps only the chosen location and three channels at 100 Hz with
 integer samples, trims to the span, and writes `<STATION>.mseed` as 512-byte
 big-endian Steim2 records (ayzek's reader takes nothing else). It then writes
 `dataset.json`: the config, the networks and service URLs, span, centre,
@@ -138,9 +138,16 @@ that collide with codes ayzek already holds.
   can return a span whose end precedes its start (seen for HT.THE on
   2012-06-01, which has no data that day); such spans count as zero. Under
   more than about two parallel requests the node drops connections and then
-  stops answering for minutes: the tool uses two requests at a time with
-  retries and backoff, and a probe that still fails stops with an error
-  rather than treating the station as empty.
+  stops answering for minutes: the tool uses two requests at a time, and a
+  probe that still fails stops with an error rather than treating the station
+  as empty.
+- Every request to a service (stations, availability, waveforms, events) is
+  made again after 5, 15, 45, 120 and 300 s while it fails with a server
+  error, a timeout or a dropped connection, and never when the service
+  answers, with no data or by refusing the request (`heldout/retry.py`). In
+  the tuning fetch of 2026-10-29, before this, NOA dropped connections for
+  longer than the availability requests' 45 s of retries, and KOERI's proxy
+  answered 502 to one station's metadata request; each stopped a whole set.
 - AFAD's API returned an empty list for 2012-06-01 within 300 km of the demo
   centre, so the AFAD reader is checked only by the offline tests.
 

@@ -11,7 +11,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import availability, catalog, dataset, rules
+from . import availability, catalog, dataset, retry, rules
 
 R_EARTH_KM = 6371.0
 
@@ -30,7 +30,7 @@ def utc(t):
 
 def client(cfg):
     from obspy.clients.fdsn import Client
-    return Client(base_url=cfg.base_url, timeout=300)
+    return retry.call(Client, base_url=cfg.base_url, timeout=300, what=f"{cfg.base_url} services")
 
 
 def services(cfg):
@@ -92,8 +92,8 @@ def cmd_probe(cfg, data):
     c = client(cfg)
     t0, t1 = utc(cfg.start), utc(cfg.end)
     try:
-        inv = c.get_stations(network=",".join(cfg.networks), channel="HH?", level="channel",
-                             starttime=t0, endtime=t1)
+        inv = retry.call(c.get_stations, network=",".join(cfg.networks), channel="HH?",
+                         level="channel", starttime=t0, endtime=t1, what="station list")
     except FDSNNoDataException:
         inv = []
     rows = []
@@ -152,9 +152,10 @@ def cmd_probe(cfg, data):
     from obspy import Inventory
     full = Inventory(networks=[], source="ayzek-heldout")
     for r in chosen:
-        inv_r = c.get_stations(network=r["network"], station=r["station"],
-                               location=r["location"] or "--", channel="HH?",
-                               level="response", starttime=t0, endtime=t1)
+        inv_r = retry.call(c.get_stations, network=r["network"], station=r["station"],
+                           location=r["location"] or "--", channel="HH?",
+                           level="response", starttime=t0, endtime=t1,
+                           what=f"{r['network']}.{r['station']} response")
         inv_r.write(str(xml / f"{r['network']}.{r['station']}.xml"), format="STATIONXML")
         full += inv_r
     g = dataset.gains(full, chosen)
@@ -253,8 +254,9 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
             while t < t1:
                 end = min(t + 3600, t1)
                 try:
-                    part = c.get_waveforms(r["network"], r["station"], r["location"] or "--",
-                                           ",".join(r["channels"]), t, end)
+                    part = retry.call(c.get_waveforms, r["network"], r["station"],
+                                      r["location"] or "--", ",".join(r["channels"]), t, end,
+                                      what=f"{tag} {t.strftime('%Y-%m-%dT%H:%M')}")
                     keep, drop = rules.check_traces(part, r["location"], r["channels"])
                     st += Stream(keep)
                     for _, why in drop:

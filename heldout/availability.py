@@ -8,28 +8,25 @@ or contents, so for NZ coverage is an upper bound at day resolution.
 """
 import datetime as dt
 import re
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
+from . import retry
 
-def _get(url, tries=5):
-    for attempt in range(tries):
+
+def _get(url):
+    def once():
         try:
             with urllib.request.urlopen(url, timeout=300) as f:
                 return f.status, f.read()
         except urllib.error.HTTPError as e:
             if e.code in (204, 404):
                 return e.code, b""
-            if attempt == tries - 1:
-                raise
-        except OSError:
-            if attempt == tries - 1:
-                raise
-        time.sleep(3 * 2 ** attempt)
+            raise
+    return retry.call(once, what=url.split("?")[0])
 
 
 def parse_spans(text, t0, t1):
