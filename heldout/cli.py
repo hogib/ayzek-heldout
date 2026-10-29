@@ -5,16 +5,19 @@
     heldout pull     sets/demo_ko.toml   # waveforms hour by hour, dataset.json
     heldout catalog  sets/demo_ko.toml   # the network's catalogue -> catalog.csv
     heldout validate sets/demo_ko.toml   # dataset.json against the files
+    heldout select greece --start ... --end ... --name now
+                                         # a pool's sequences, reserve split and
+                                         # quiet windows -> set configs (select.py)
 
-`pull` and `catalog` refuse any window reaching into a network's held-out pool (the
-held-out test period) unless --allow-test-period is given. `probe` reads
+`pull`, `catalog` and `select` refuse any window reaching into a network's held-out
+pool (the held-out test period) unless --allow-test-period is given. `probe` reads
 metadata and availability only and is never guarded. Output goes to
 DATA/<set>/ (--data, default ./data).
 """
 import argparse
 import sys
 
-from . import config, fetch, rules
+from . import config, fetch, rules, select
 
 
 def main(argv=None):
@@ -33,8 +36,24 @@ def main(argv=None):
                            help="allow windows in the held-out pools (only after the freeze)")
         if name == "pull":
             s.add_argument("--force", action="store_true", help="re-download files present")
+    s = sub.add_parser("select", help="a pool's sequences, reserve split and quiet windows")
+    s.add_argument("group", choices=sorted(select.GROUPS))
+    s.add_argument("--start", required=True, help="UTC, ISO")
+    s.add_argument("--end", required=True, help="UTC, ISO (the freeze, for a pool)")
+    s.add_argument("--name", required=True, help="e.g. now, prospective, dry2022")
+    s.add_argument("--out", default="selections")
+    s.add_argument("--prospective", action="store_true",
+                   help="no reserve split; quiet seed 44 (protocol section 10)")
+    s.add_argument("--target", type=int, help="scorable events (default: the protocol's)")
+    s.add_argument("--no-quiet", action="store_true", help="sequences only")
+    s.add_argument("--allow-test-period", action="store_true",
+                   help="allow a held-out pool (only after the freeze)")
     a = p.parse_args(argv)
     try:
+        if a.cmd == "select":
+            return select.cmd_select(
+                a.group, config.parse_utc(a.start, "--start"), config.parse_utc(a.end, "--end"),
+                a.name, a.out, a.prospective, a.target, not a.no_quiet, a.allow_test_period)
         cfg = config.load(a.config)
         if a.cmd == "probe":
             return fetch.cmd_probe(cfg, a.data)

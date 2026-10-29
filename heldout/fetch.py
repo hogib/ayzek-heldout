@@ -97,11 +97,12 @@ def coverage(cfg, rows):
     return basis
 
 
-def cmd_probe(cfg, data):
-    """Metadata and availability only: chooses the stations, writes stations.json."""
+def probe_rows(cfg, c):
+    """Every station of cfg's networks within its radius, nearest first, with the
+    probe's rules applied over cfg's span: three HH channels at 100 Hz, the
+    azimuth limit, the set's own station list if it has one, and coverage
+    (r["ok"], r["reason"], r["coverage_min"]). Returns (rows, coverage basis)."""
     from obspy.clients.fdsn.header import FDSNNoDataException
-    out = set_dir(data, cfg)
-    c = client(cfg, "station")
     t0, t1 = utc(cfg.start), utc(cfg.end)
     try:
         inv = retry.call(c.get_stations, network=",".join(cfg.networks), channel="HH?",
@@ -129,16 +130,32 @@ def cmd_probe(cfg, data):
             rows[-1]["ok"] = False
             rows[-1]["reason"] = (f"horizontals {az} off N/E by more than "
                                   f"{cfg.max_azimuth_offset_deg:g} deg")
+        if rows[-1]["ok"] and cfg.stations and f"{net}.{sta}" not in cfg.stations:
+            rows[-1]["ok"] = False
+            rows[-1]["reason"] = "not in the set's station list"
     rows.sort(key=lambda r: (r["distance_km"], r["network"], r["station"]))
-    print(f"[probe] {len(rows)} {'/'.join(cfg.networks)} stations with HH? within "
-          f"{cfg.radius_km:g} km, {cfg.start:%Y-%m-%dT%H:%M:%S} to {cfg.end:%Y-%m-%dT%H:%M:%S}")
     passing = [r for r in rows if r["ok"]]
     basis = coverage(cfg, passing) if passing else "-"
-    chosen, codes = [], set()
     for r in rows:
         if r["ok"] and r["coverage_min"] < cfg.min_coverage:
             r["ok"] = False
             r["reason"] = f"coverage {r['coverage_min']:.3f} < {cfg.min_coverage:g}"
+    return rows, basis
+
+
+def cmd_probe(cfg, data):
+    """Metadata and availability only: chooses the stations, writes stations.json."""
+    out = set_dir(data, cfg)
+    c = client(cfg, "station")
+    t0, t1 = utc(cfg.start), utc(cfg.end)
+    rows, basis = probe_rows(cfg, c)
+    print(f"[probe] {len(rows)} {'/'.join(cfg.networks)} stations with HH? within "
+          f"{cfg.radius_km:g} km, {cfg.start:%Y-%m-%dT%H:%M:%S} to {cfg.end:%Y-%m-%dT%H:%M:%S}")
+    missing = sorted(set(cfg.stations) - {f"{r['network']}.{r['station']}" for r in rows})
+    if missing:
+        print(f"[probe] not found within {cfg.radius_km:g} km: {' '.join(missing)}", file=sys.stderr)
+    chosen, codes = [], set()
+    for r in rows:
         if r["ok"] and r["station"] in codes:
             r["ok"] = False
             r["reason"] = "station code already chosen from another network"

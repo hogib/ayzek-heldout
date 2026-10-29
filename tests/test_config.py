@@ -67,7 +67,11 @@ def test_catalog_overrides():
     ({"max_stations": 2.5}, "integer"),
     ({"min_coverage": 1.5}, "min_coverage"),
     ({"name": "Demo KO"}, "name"),
-    ({"stations": 6}, "unknown keys"),
+    ({"station_count": 6}, "unknown keys"),
+    ({"stations": 6}, "list of distinct NET.STA"),
+    ({"stations": ["DEMI"]}, "list of distinct NET.STA"),
+    ({"stations": ["KO.DEMI", "KO.DEMI"]}, "list of distinct NET.STA"),
+    ({"stations": [f"KO.S{i}" for i in range(7)]}, "max_stations is 6"),
     ({"catalog": {"start": "2012-06-01T00:00:00"}}, "go together"),
     ({"catalog": {"radius": 3}}, "unknown catalog keys"),
 ])
@@ -88,3 +92,10 @@ def test_azimuth_limit():
     assert config.parse({**BASE, "max_azimuth_offset_deg": 5}).max_azimuth_offset_deg == 5.0
     with pytest.raises(ConfigError):
         config.parse({**BASE, "max_azimuth_offset_deg": 200})
+
+
+def test_station_list():
+    c = config.parse({**BASE, "stations": ["KO.DEMI", "KO.MANT"]})
+    assert c.stations == ("KO.DEMI", "KO.MANT")
+    assert c.to_json()["stations"] == ["KO.DEMI", "KO.MANT"]
+    assert config.parse(BASE).stations == ()

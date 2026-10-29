@@ -10,6 +10,7 @@
     min_coverage = 0.9             # optional: fraction of the span each channel must cover
     max_azimuth_offset_deg = 5.0   # optional: refuse horizontals further than this from
                                    # N/E (ayzek reads 1/2 as N/E, unrotated); default: keep
+    stations = ["KO.DEMI", ...]    # optional: only these NET.STA (heldout select's sets)
 
     [catalog]                      # optional
     lead_days = 30                 # also the 30 days before the span (ayzek --assess)
@@ -69,6 +70,7 @@ class SetConfig:
     max_stations: int
     min_coverage: float = 0.9
     max_azimuth_offset_deg: float | None = None
+    stations: tuple[str, ...] = ()
     catalog: CatalogConfig = field(default_factory=CatalogConfig)
     source: str = ""
 
@@ -97,6 +99,7 @@ class SetConfig:
             if d["catalog"][k] is not None:
                 d["catalog"][k] = d["catalog"][k].isoformat()
         d["networks"] = list(self.networks)
+        d["stations"] = list(self.stations)
         return d
 
 
@@ -116,7 +119,7 @@ def _number(d, key, what, default=None, kind=float):
 def parse(d, source=""):
     what = source or "config"
     known = {"name", "network", "start", "end", "centre", "radius_km",
-             "max_stations", "min_coverage", "max_azimuth_offset_deg", "catalog"}
+             "max_stations", "min_coverage", "max_azimuth_offset_deg", "stations", "catalog"}
     extra = set(d) - known
     if extra:
         raise ConfigError(f"{what}: unknown keys {sorted(extra)}")
@@ -157,6 +160,13 @@ def parse(d, source=""):
              if "max_azimuth_offset_deg" in d else None)
     if azmax is not None and not 0 <= azmax <= 180:
         raise ConfigError(f"{what}: max_azimuth_offset_deg must be in [0, 180]")
+    stations = d.get("stations", [])
+    if (not isinstance(stations, list)
+            or not all(isinstance(x, str) and x.count(".") == 1 for x in stations)
+            or len(set(stations)) != len(stations)):
+        raise ConfigError(f"{what}: stations must be a list of distinct NET.STA codes")
+    if stations and len(stations) > nmax:
+        raise ConfigError(f"{what}: {len(stations)} stations listed, max_stations is {nmax}")
     c = d.get("catalog", {})
     if not isinstance(c, dict):
         raise ConfigError(f"{what}: [catalog] must be a table")
@@ -180,7 +190,8 @@ def parse(d, source=""):
         raise ConfigError(f"{what}: catalog.limit must be at least 1")
     return SetConfig(name=name, networks=nets, start=start, end=end, lat=lat, lon=lon,
                      radius_km=radius, max_stations=nmax, min_coverage=cov,
-                     max_azimuth_offset_deg=azmax, catalog=cat, source=source)
+                     max_azimuth_offset_deg=azmax, stations=tuple(stations), catalog=cat,
+                     source=source)
 
 
 def load(path):
