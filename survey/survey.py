@@ -233,8 +233,9 @@ def write(rows, path):
         w.writerows(rows)
 
 
-def report(rows, out, region):
-    write(rows, out / f"{region}_stations.csv")
+def report(rows, out, region, write_csv=True):
+    if write_csv:
+        write(rows, out / f"{region}_stations.csv")
     usable = [r for r in rows if r["hh_100hz"] and r["cov_min"] != "" and r["cov_min"] >= 0.9]
     print(f"{len(rows)} stations with HH open on {NOW.date}; "
           f"{sum(r['hh_100hz'] for r in rows)} with three HH at 100 Hz; "
@@ -289,7 +290,9 @@ def cmd_region(args):
         try:
             covs = [noa_coverage(r) for r in rows]
         finally:
-            cache.write_text(json.dumps(AVAIL_CACHE, indent=0, sort_keys=True))
+            tmp = cache.with_suffix(".tmp")  # a kill mid-write keeps the old cache
+            tmp.write_text(json.dumps(AVAIL_CACHE, indent=0, sort_keys=True))
+            tmp.replace(cache)
         ndays = None
     else:
         cov_nz, ndays = nz_coverage(rows)
@@ -367,6 +370,19 @@ def cmd_collisions(args):
     return 0
 
 
+def cmd_report(args):
+    """The summary and clusters again, from <out>/<region>_stations.csv (offline)."""
+    with open(Path(args.out) / f"{args.region}_stations.csv") as f:
+        rows = [r for r in csv.DictReader(f)
+                if not args.networks or r["network"] in args.networks.split(",")]
+    for r in rows:
+        r["hh_100hz"] = r["hh_100hz"] == "True"
+        r["lat"], r["lon"] = float(r["lat"]), float(r["lon"])
+        r["cov_min"] = float(r["cov_min"]) if r["cov_min"] else ""
+    report(rows, Path(args.out), args.region, write_csv=False)
+    return 0
+
+
 def cmd_tables(args):
     """Markdown tables of the usable stations, for SURVEY.md."""
     out = Path(args.out)
@@ -404,6 +420,11 @@ def main():
     c.add_argument("--ayzek-models", required=True,
                    help="ayzek's models/ directory (read only)")
     c.set_defaults(fn=cmd_collisions)
+    r = sub.add_parser("report", help="summary and clusters from the CSV, offline")
+    r.add_argument("region", choices=("greece", "nz"))
+    r.add_argument("out")
+    r.add_argument("--networks", help="comma-separated: only these networks")
+    r.set_defaults(fn=cmd_report)
     t = sub.add_parser("tables", help="markdown tables of the stations for SURVEY.md")
     t.add_argument("out")
     t.set_defaults(fn=cmd_tables)

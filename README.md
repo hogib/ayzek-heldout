@@ -133,13 +133,23 @@ that collide with codes ayzek already holds.
 - NOA's event service returned no event for 2012-06-01 within 1000 km of
   Athens (HTTP 204): it may not hold events that old, so its output format is
   checked only by the offline tests.
+- NOA's availability service clips spans to the request window in a way that
+  can return a span whose end precedes its start (seen for HT.THE on
+  2012-06-01, which has no data that day); such spans count as zero. Under
+  more than about two parallel requests the node drops connections and then
+  stops answering for minutes: the tool uses two requests at a time with
+  retries and backoff, and a probe that still fails stops with an error
+  rather than treating the station as empty.
 - AFAD's API returned an empty list for 2012-06-01 within 300 km of the demo
   centre, so the AFAD reader is checked only by the offline tests.
 
 ## Provenance
 
 Adapted, not imported, from ayzek_code at commit `d6e8414`
-(`git -C ../ayzek_code rev-parse --short HEAD`):
+(`git -C ../ayzek_code rev-parse --short HEAD` at the time). Rechecked at
+`571e383` (branch pd-magnitude-window): the sources below, `models/
+stations.csv`, `models/pd_gain.csv` and the catalogue reader are unchanged
+between the two commits.
 
 - `tools/fetch_ko_data.py`: the probe/pull structure, the hour-by-hour pull,
   merge-then-split of segments, the KO citation and the `demo_ko` set

@@ -1,0 +1,19 @@
+station,networks,collides_with,usable
+ACOR,HA,ayzek:stations,HA
+ALN,HT,ayzek:stations,
+DSLC,NZ,ayzek:stations,
+HAS,NZ,ayzek:stations,
+HNZ,NZ,ayzek:stations,
+KARA,HL,KO ayzek:stations/pd_gain/pd_terms/pd_noise,
+KARS,NZ,KO ayzek:stations/pd_gain/pd_noise,
+KIRS,NZ,ayzek:stations,
+KKZ,NZ,ayzek:stations,
+KURT,HL,ayzek:stations,
+LALA,HL,ayzek:stations,
+MANS,NZ,ayzek:stations,
+MRTH,HA+HL,HA+HL,HA
+PRNS,HC+NZ,HC+NZ,
+SIVA,HL,ayzek:stations,
+STRF,HL+HT,HL+HT,
+STZ,NZ,ayzek:stations,
+THT2,HC+HT,HC+HT,

@@ -1,0 +1,19 @@
+278 KO codes (KOERI, all epochs), 1601 codes in ayzek models, (stations.csv 1564, pd_gain.csv 121, pd_terms.csv 125, pd_noise.csv 148), 1830 HL/HT/HA/HP/HC/NZ codes; 18 collide
+  ACOR   HA         with ayzek:stations                                usable: HA
+  ALN    HT         with ayzek:stations                                usable: -
+  DSLC   NZ         with ayzek:stations                                usable: -
+  HAS    NZ         with ayzek:stations                                usable: -
+  HNZ    NZ         with ayzek:stations                                usable: -
+  KARA   HL         with KO ayzek:stations/pd_gain/pd_terms/pd_noise   usable: -
+  KARS   NZ         with KO ayzek:stations/pd_gain/pd_noise            usable: -
+  KIRS   NZ         with ayzek:stations                                usable: -
+  KKZ    NZ         with ayzek:stations                                usable: -
+  KURT   HL         with ayzek:stations                                usable: -
+  LALA   HL         with ayzek:stations                                usable: -
+  MANS   NZ         with ayzek:stations                                usable: -
+  MRTH   HA+HL      with HA+HL                                         usable: HA
+  PRNS   HC+NZ      with HC+NZ                                         usable: -
+  SIVA   HL         with ayzek:stations                                usable: -
+  STRF   HL+HT      with HL+HT                                         usable: -
+  STZ    NZ         with ayzek:stations                                usable: -
+  THT2   HC+HT      with HC+HT                                         usable: -
