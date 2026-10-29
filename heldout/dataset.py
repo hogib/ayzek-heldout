@@ -7,10 +7,13 @@
                                  models/pd_gain.csv (vertical channel, every
                                  epoch; counts per m/s)
     data/<set>/<STATION>.mseed   three HH components, 512-byte Steim2 records
-    data/<set>/dataset.json      the request and what arrived
+    data/<set>/dataset.json      the request and what arrived, with the SHA-256
+                                 and size of every file above but stations.json
+                                 ("files"; `heldout verify` checks them)
     data/<set>/catalog.csv       the network's catalogue, ayzek --catalog format
 """
 import datetime as dt
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -86,11 +89,74 @@ def validate(d, directory=None):
                 raise DatasetError(f"{p}: missing or empty")
             if p.stat().st_size != s["bytes"]:
                 raise DatasetError(f"{p}: {p.stat().st_size} bytes, dataset.json says {s['bytes']}")
+    if "files" in d and not (isinstance(d["files"], dict) and all(
+            isinstance(v, dict) and isinstance(v.get("sha256"), str)
+            and isinstance(v.get("bytes"), int) for v in d["files"].values())):
+        raise DatasetError("dataset.json: 'files' must map names to {sha256, bytes}")
     if directory is not None and "catalog" in d:
         p = Path(directory) / d["catalog"]["file"]
         if not p.is_file():
             raise DatasetError(f"{p}: missing")
     return d
+
+
+def sha256(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def set_files(directory, d):
+    """The files the fetch wrote for a set, relative to its directory: every
+    miniSEED file dataset.json lists, the StationXML, stations.csv, pd_gain.csv
+    and catalog.csv where present (not stations.json or dataset.json, records
+    of the requests rather than data)."""
+    directory = Path(directory)
+    names = [s["file"] for s in d.get("stations", [])]
+    xml = directory / "stationxml"
+    if xml.is_dir():
+        names += sorted(f"stationxml/{p.name}" for p in xml.glob("*.xml"))
+    names += [n for n in ("stations.csv", "pd_gain.csv") if (directory / n).is_file()]
+    if "catalog" in d:
+        names.append(d["catalog"]["file"])
+    return names
+
+
+def file_hashes(directory, names):
+    """{name: {"sha256", "bytes"}} of complete files, for dataset.json's "files"."""
+    directory = Path(directory)
+    return {n: {"sha256": sha256(directory / n), "bytes": (directory / n).stat().st_size}
+            for n in names}
+
+
+def verify(directory):
+    """Recomputes the SHA-256 and size of every file dataset.json's "files"
+    records: [(name, "match" | "mismatch" | "missing", detail)]. Raises
+    DatasetError if dataset.json is missing or records no files (written
+    before the record existed)."""
+    directory = Path(directory)
+    p = directory / "dataset.json"
+    if not p.is_file():
+        raise DatasetError(f"{p}: missing")
+    files = json.loads(p.read_text()).get("files")
+    if not files:
+        raise DatasetError(f"{p}: no file hashes recorded (written before they were)")
+    out = []
+    for name, want in sorted(files.items()):
+        f = directory / name
+        if not f.is_file():
+            out.append((name, "missing", ""))
+            continue
+        got = sha256(f)
+        size = f.stat().st_size
+        if got == want["sha256"] and size == want["bytes"]:
+            out.append((name, "match", ""))
+        else:
+            out.append((name, "mismatch", f"{size} bytes, sha256 {got[:12]}; recorded "
+                                          f"{want['bytes']} bytes, {want['sha256'][:12]}"))
+    return out
 
 
 def write_json(path, d):

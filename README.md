@@ -51,6 +51,7 @@ Python with ObsPy, managed with uv:
     uv run heldout pull     sets/demo_ko.toml --allow-test-period
     uv run heldout catalog  sets/demo_ko.toml --allow-test-period
     uv run heldout validate sets/demo_ko.toml
+    uv run heldout verify   data/demo_ko
 
 A set is a TOML file in `sets/` (the protocol lists them; anyone can rebuild a
 set from its file):
@@ -134,6 +135,20 @@ The set directory:
                                  (ayzek models/pd_gain.csv; HHZ epochs in the span)
     data/<set>/stationxml/<NET>.<STA>.xml
     data/<set>/catalog.csv
+
+**The file record and verify.** The fetched waveforms are not redistributed
+(they are open at their data centres); what is published is the request
+record, so that anyone can fetch the same data again and check it. `pull`
+writes, and `catalog` rewrites, a `files` entry in `dataset.json`: the SHA-256
+and size in bytes of every file the fetch wrote (each miniSEED file, the
+StationXML, `stations.csv`, `pd_gain.csv` if present, `catalog.csv` once
+fetched; not `stations.json` or `dataset.json`, which record the requests),
+computed after each file is complete. `heldout verify DATA/<set>` recomputes
+them and prints each file as `match`, `mismatch` or `missing` (exit status 0
+when all match, 1 otherwise, 2 when `dataset.json` records no files, as one
+written before the record existed, which still validates). A re-fetch can
+differ for reasons of the data centre's (late data, gaps filled, metadata
+updated); such a difference is reported, not hidden.
 
 ## Replaying a set in ayzek
 

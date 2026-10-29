@@ -148,3 +148,6 @@ def test_pull_leaves_out_a_station_whose_rotation_fails(tmp_path, monkeypatch):
     assert [s["station"] for s in d["stations"]] == ["WEL"]
     assert any("NZ.MKTZ: rotation to N/E failed" in f for f in d["request_failures"])
     assert not (out / "MKTZ.mseed").exists()
+    # The file record: what the fetch wrote, complete.
+    assert sorted(d["files"]) == ["WEL.mseed", "stationxml/NZ.MKTZ.xml"]
+    assert d["files"]["WEL.mseed"]["bytes"] == (out / "WEL.mseed").stat().st_size

@@ -5,6 +5,7 @@
     heldout pull     sets/demo_ko.toml   # waveforms hour by hour, dataset.json
     heldout catalog  sets/demo_ko.toml   # the network's catalogue -> catalog.csv
     heldout validate sets/demo_ko.toml   # dataset.json against the files
+    heldout verify   data/demo_ko        # every file against its recorded SHA-256
     heldout select greece --start ... --end ... --name now
                                          # a pool's sequences, reserve split and
                                          # quiet windows -> set configs (select.py)
@@ -36,6 +37,8 @@ def main(argv=None):
                            help="allow windows in the held-out pools (only after the freeze)")
         if name == "pull":
             s.add_argument("--force", action="store_true", help="re-download files present")
+    s = sub.add_parser("verify", help="check a set's files against dataset.json's SHA-256")
+    s.add_argument("setdir", help="a set directory (DATA/<set>)")
     s = sub.add_parser("select", help="a pool's sequences, reserve split and quiet windows")
     s.add_argument("group", choices=sorted(select.GROUPS))
     s.add_argument("--start", required=True, help="UTC, ISO")
@@ -50,6 +53,8 @@ def main(argv=None):
                    help="allow a held-out pool (only after the freeze)")
     a = p.parse_args(argv)
     try:
+        if a.cmd == "verify":
+            return fetch.cmd_verify(a.setdir)
         if a.cmd == "select":
             return select.cmd_select(
                 a.group, config.parse_utc(a.start, "--start"), config.parse_utc(a.end, "--end"),

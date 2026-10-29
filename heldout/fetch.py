@@ -371,6 +371,9 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
         prev = json.loads(old.read_text())
         if "catalog" in prev and prev.get("span") == d["span"]:
             d["catalog"] = prev["catalog"]
+    # Every file is complete here (written through a temporary file); a re-fetch
+    # is checked against these (heldout verify).
+    d["files"] = dataset.file_hashes(out, dataset.set_files(out, d))
     try:
         dataset.write_dataset(out, d)
     except dataset.DatasetError as e:
@@ -414,6 +417,7 @@ def cmd_catalog(cfg, data, allow_test_period=False):
                                              for e, why in skipped],
                     "magnitude_types": types, "retrieved_utc": dataset.now_utc(),
                     "citation": info.catalog_citation, "canary": check}
+    d["files"] = dataset.file_hashes(out, dataset.set_files(out, d))
     dataset.write_dataset(out, d)
     print(f"[catalog] {n} events ({', '.join(types) or 'none'}), {len(skipped)} left out, "
           f"{t0:%Y-%m-%d %H:%M} to {t1:%Y-%m-%d %H:%M} within {radius:g} km -> "
@@ -424,6 +428,23 @@ def cmd_catalog(cfg, data, allow_test_period=False):
     if n == 0:
         print("[catalog] note: the catalogue window holds no event", file=sys.stderr)
     return 0
+
+
+def cmd_verify(directory):
+    """Each file dataset.json records, recomputed: match, mismatch or missing.
+    0 if all match, 1 otherwise, 2 if nothing is recorded."""
+    try:
+        res = dataset.verify(directory)
+    except dataset.DatasetError as e:
+        print(f"[verify] {e}", file=sys.stderr)
+        return 2
+    for name, status, detail in res:
+        print(f"  {status:8s} {name}{'  ' + detail if detail else ''}")
+    bad = [r for r in res if r[1] != "match"]
+    print(f"[verify] {directory}: {len(res) - len(bad)} of {len(res)} files match"
+          + (f", {sum(r[1] == 'mismatch' for r in bad)} differ, "
+             f"{sum(r[1] == 'missing' for r in bad)} missing" if bad else ""))
+    return 1 if bad else 0
 
 
 def cmd_validate(cfg, data):
