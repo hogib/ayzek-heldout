@@ -175,6 +175,32 @@ def from_afad(records):
     return out
 
 
+class CanaryError(RuntimeError):
+    pass
+
+
+def canary(info):
+    """Asks a network's catalogue service for its canary window
+    (networks.Canary) through the same request as the catalogue, and raises
+    CanaryError if fewer than its minimum of events come back. Returns what
+    dataset.json records of it, or None for a network without a canary."""
+    c = info.canary
+    if c is None:
+        return None
+    t0, t1 = dt.datetime.fromisoformat(c.start), dt.datetime.fromisoformat(c.end)
+    if info.catalog == "afad":
+        events, url = fetch_afad(t0, t1, c.lat, c.lon, c.radius_km)
+    else:
+        events, url = fetch_fdsn(info.event_url, t0, t1, c.lat, c.lon, c.radius_km)
+    if len(events) < c.min_events:
+        raise CanaryError(
+            f"{info.catalog_agency} returned {len(events)} events for its canary window "
+            f"{c.start} to {c.end} within {c.radius_km:g} km of {c.lat:g}, {c.lon:g}, "
+            f"where at least {c.min_events} are expected")
+    return {"window": [c.start, c.end], "centre": [c.lat, c.lon], "radius_km": c.radius_km,
+            "min_events": c.min_events, "events": len(events), "request": url}
+
+
 def fetch_afad(t0, t1, lat, lon, radius_km, min_mag=None, limit=None):
     url = afad_url(t0, t1, lat, lon, radius_km, min_mag, limit)
     body = retry.call(_read, url, what="AFAD event service")

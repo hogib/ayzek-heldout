@@ -5,7 +5,7 @@ detection pipeline, from three networks:
 
 | set network | operator | service |
 |---|---|---|
-| `KO` | KOERI, Türkiye | `eida.koeri.boun.edu.tr` (station, dataselect, availability); catalogue: AFAD |
+| `KO` | KOERI, Türkiye | `eida.koeri.boun.edu.tr` (station, dataselect, availability); catalogue: EMSC |
 | `HL`, `HT` | NOA, AUTH (Greece) | NOA EIDA node `eida.gein.noa.gr` serves both (station, dataselect, availability, event) |
 | `NZ` | GeoNet (Earth Sciences NZ) | `service.geonet.org.nz` (station, dataselect, event); no availability service |
 
@@ -100,9 +100,19 @@ has data, via a temporary file.
 `--catalog` reads (`Date,Longitude,Latitude,Depth,Rms,Type,Magnitude,
 Location,EventID`, date `DD/MM/YYYY HH:MM:SS` UTC, depth km, `Type` the
 magnitude type as published). Events without depth or magnitude are left out
-and listed in `dataset.json`. Catalogues: KO: AFAD (KOERI runs no FDSN event
-service; ayzek's KO development catalogues are AFAD's); HL: NOA fdsnws/event;
-NZ: GeoNet fdsnws/event; HT: NOA's, standing in for AUTH's (see below).
+and listed in `dataset.json`. Catalogues: KO: EMSC fdsnws/event (KOERI runs no
+FDSN event service, and AFAD's event API answers with an empty list, see
+below); HL, HT, HA, HP, HC: NOA fdsnws/event (for HT standing in for AUTH's,
+see below); NZ: GeoNet fdsnws/event.
+
+Before the catalogue itself, the step asks the same service for the network's
+canary (`heldout/networks.py`): a fixed window before the network's pool,
+known to contain events (KO: the Sındırgı Mw 6.1 replay of 2025-08-10, 69
+events from EMSC on 2026-10-29; Greece and New Zealand: the catalogue windows
+of tune_greece_1 and tune_nz_1, 14 and 51 events). If fewer than about 40% of
+those come back, the service is not trusted: nothing is written and the exit
+status is 3. `dataset.json` records the canary's window, minimum, count and
+request.
 
 The set directory:
 
@@ -148,8 +158,14 @@ that collide with codes ayzek already holds.
   the tuning fetch of 2026-10-29, before this, NOA dropped connections for
   longer than the availability requests' 45 s of retries, and KOERI's proxy
   answered 502 to one station's metadata request; each stopped a whole set.
-- AFAD's API returned an empty list for 2012-06-01 within 300 km of the demo
-  centre, so the AFAD reader is checked only by the offline tests.
+- AFAD's event API (`servisnet.afad.gov.tr/apigateway/deprem/apiv2/event/filter`,
+  to which `deprem.afad.gov.tr/apiv2` redirects) returned HTTP 200 with an empty
+  list to every query of 2026-10-29: by time and area, by time alone, and by
+  event id for development events (the Sındırgı hours of 2025-11-09/10 and
+  Simav's of 2026-04-11). The KO tuning catalogues fetched from it were empty
+  before the canary existed, and were fetched again from EMSC. Whether it
+  serves recent events was not checked, since that would have meant asking
+  for KO's test period. The AFAD reader stays, checked by the offline tests.
 
 ## Provenance
 

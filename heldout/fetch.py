@@ -350,6 +350,12 @@ def cmd_catalog(cfg, data, allow_test_period=False):
         raise SystemExit(f"{ds_path}: run pull first")
     d = json.loads(ds_path.read_text())
     info = cfg.network_info[0]
+    try:
+        check = catalog.canary(info)
+    except catalog.CanaryError as e:
+        print(f"[catalog] FAILED: {e}; the service is not trusted, nothing written",
+              file=sys.stderr)
+        return 3
     radius = cfg.catalog_radius_km()
     kw = dict(min_mag=cfg.catalog.min_magnitude, limit=cfg.catalog.limit)
     if info.catalog == "afad":
@@ -365,11 +371,14 @@ def cmd_catalog(cfg, data, allow_test_period=False):
                     "events": n, "skipped": [f"{e.time:%Y-%m-%dT%H:%M:%S} {why}"
                                              for e, why in skipped],
                     "magnitude_types": types, "retrieved_utc": dataset.now_utc(),
-                    "citation": info.catalog_citation}
+                    "citation": info.catalog_citation, "canary": check}
     dataset.write_dataset(out, d)
     print(f"[catalog] {n} events ({', '.join(types) or 'none'}), {len(skipped)} left out, "
           f"{t0:%Y-%m-%d %H:%M} to {t1:%Y-%m-%d %H:%M} within {radius:g} km -> "
           f"{out / 'catalog.csv'}")
+    if check:
+        print(f"[catalog] canary: {check['events']} events from {check['window'][0]} to "
+              f"{check['window'][1]} (at least {check['min_events']})")
     if n == 0:
         print("[catalog] note: the catalogue window holds no event", file=sys.stderr)
     return 0
