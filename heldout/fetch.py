@@ -187,8 +187,20 @@ def cmd_probe(cfg, data):
                            what=f"{r['network']}.{r['station']} response")
         inv_r.write(str(xml / f"{r['network']}.{r['station']}.xml"), format="STATIONXML")
         full += inv_r
-    g = dataset.gains(full, chosen)
+    # A station whose response is not flat across Pd's band gets no gain row
+    # (dataset.flatness): it still detects, but is not measured for Pd.
+    refused = []
+    g = dataset.gains(full, chosen, refused)
     missing = sorted({r["station"] for r in chosen} - {x["station"] for x in g})
+    spec["gains_refused"] = refused
+    for x in refused:
+        print(f"[probe] no Pd gain for {x['network']}.{x['station']} {x['channel']} epoch "
+              f"from {x['start']}: {x['reason']}", file=sys.stderr)
+    for r in chosen:
+        why = [x["reason"] for x in refused if (x["network"], x["station"])
+               == (r["network"], r["station"])]
+        if why:
+            r["pd_gain_refused"] = "; ".join(why)
     dataset.stations_csv(out / "stations.csv", chosen)
     dataset.gains_csv(out / "pd_gain.csv", g)
     spec["gains_missing"] = missing
@@ -335,6 +347,8 @@ def cmd_pull(cfg, data, allow_test_period=False, force=False):
          "stations_requested": [{k: r.get(k) for k in ("network", "station", "distance_km",
                                                        "ok", "reason", "coverage_min")}
                                 for r in spec["probed"]],
+         "pd_gains_refused": spec.get("gains_refused", []),
+         "pd_gains_missing": spec.get("gains_missing", []),
          "stations_chosen": [f"{r['network']}.{r['station']}" for r in spec["chosen"]],
          "stations": got, "request_failures": failures,
          "retrieved_utc": dataset.now_utc(),

@@ -81,7 +81,12 @@ bucket: an upper bound). The nearest `max_stations` with at least
 from another network is refused, since ayzek keys stations on the code alone.
 It writes `stations.json` (every candidate and why it was kept or not), the
 chosen stations' StationXML (`stationxml/`, response level), `stations.csv`
-and `pd_gain.csv`. No waveform is requested.
+and `pd_gain.csv`. A vertical epoch gets a gain row only when its velocity
+response divided by the stated sensitivity lies within 0.8-1.25 at 0.1, 0.2,
+0.5, 1, 2 and 5 Hz (Pd divides by that one number); the others are listed with
+the ratios under `gains_refused` in `stations.json` (and `pd_gains_refused` in
+`dataset.json`), and ayzek does not measure Pd at those stations. No waveform
+is requested.
 
 **pull** downloads each chosen station hour by hour (a failure that outlasts
 the retries below costs one hour, and is listed in `dataset.json`), keeps only the chosen location and three channels at 100 Hz with
@@ -187,7 +192,8 @@ between the two commits.
   guard; `quiet-scan` dropped.
 - `tools/export_pd.py` (`gains`): the rule for the vertical channel's
   sensitivity (input units m/s, epoch start/end in seconds). Changed: HH only,
-  the station's chosen location code.
+  the station's chosen location code, and only for a response flat across
+  Pd's band (see probe).
 - `tools/export_models.py`: the `stations.csv` header.
 - The catalogue format follows `load_afad_catalog` (`src/pipeline/network.cpp`)
   and `tests/catalogs/demo_ko.csv`; the 512-byte record requirement follows

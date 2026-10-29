@@ -1,0 +1,325 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
+  <Source>SeisComP</Source>
+  <Sender>NOA</Sender>
+  <Module/>
+  <ModuleURI/>
+  <Created>2026-10-29T06:00:59.312325Z</Created>
+  <Network code="HL" startDate="1997-01-01T00:00:00.000000Z" restrictedStatus="open">
+    <Description>Hellenic Seismic Network</Description>
+    <Identifier type="DOI">10.7914/SN/HL</Identifier>
+    <Station code="ATH" startDate="2010-03-02T00:00:00.000000Z" restrictedStatus="open">
+      <Latitude unit="DEGREES">37.97384</Latitude>
+      <Longitude unit="DEGREES">23.71767</Longitude>
+      <Elevation>93.0</Elevation>
+      <Site>
+        <Name>Athens,Greece</Name>
+        <Country>Greece</Country>
+      </Site>
+      <CreationDate>2010-03-02T00:00:00.000000Z</CreationDate>
+      <Channel code="HHZ" startDate="2018-10-30T00:00:00.000000Z" restrictedStatus="open" locationCode="">
+        <Latitude unit="DEGREES">37.97384</Latitude>
+        <Longitude unit="DEGREES">23.71767</Longitude>
+        <Elevation>93.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor/20251217211827.802598.75">
+          <Type>DR24</Type>
+          <Description>STS2 DR24</Description>
+          <Model>DR24</Model>
+        </Sensor>
+        <DataLogger resourceId="Datalogger/20251217211827.801642.70"/>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>394911000.0</Value>
+            <Frequency>1.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>Velocity in Meters Per Second</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="HL.ATH.HHZ.2018.303.00.00.00" resourceId="ResponsePAZ/20251217211827.802646.76">
+              <InputUnits>
+                <Name>M/S</Name>
+                <Description>Velocity in Meters Per Second</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>3.4684e+17</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">1.0</NormalizationFrequency>
+              <Zero number="11">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="12">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="13">
+                <Real>-15.15</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="14">
+                <Real>-176.6</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="15">
+                <Real>-463.1</Real>
+                <Imaginary>-430.5</Imaginary>
+              </Zero>
+              <Zero number="16">
+                <Real>-463.1</Real>
+                <Imaginary>430.5</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-0.037</Real>
+                <Imaginary>-0.037</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-0.037</Real>
+                <Imaginary>0.037</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-15.64</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-97.34</Real>
+                <Imaginary>-400.7</Imaginary>
+              </Pole>
+              <Pole number="4">
+                <Real>-97.34</Real>
+                <Imaginary>400.7</Imaginary>
+              </Pole>
+              <Pole number="5">
+                <Real>-374.8</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="6">
+                <Real>-520.3</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="7">
+                <Real>-10530.0</Real>
+                <Imaginary>-10050.0</Imaginary>
+              </Pole>
+              <Pole number="8">
+                <Real>-10530.0</Real>
+                <Imaginary>10050.0</Imaginary>
+              </Pole>
+              <Pole number="9">
+                <Real>-13300.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+              <Pole number="10">
+                <Real>-255.097</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>1500.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <PolesZeros name="HL.ATH..HHZ.2018.303.00.00.00.stage_2" resourceId="ResponsePAZ/20251217211827.801763.71">
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>12437.8</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">1.0</NormalizationFrequency>
+              <Pole number="0">
+                <Real>-12437.8</Real>
+                <Imaginary>0.0</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">204800.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>263274.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="4">
+            <FIR name="HL.ATH..HHZ.2018.303.00.00.00.stage_4" resourceId="ResponseFIR/20251217211827.80195.72">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>0.0</NumeratorCoefficient>
+              <NumeratorCoefficient>0.0</NumeratorCoefficient>
+              <NumeratorCoefficient>1.0</NumeratorCoefficient>
+              <NumeratorCoefficient>4.0</NumeratorCoefficient>
+              <NumeratorCoefficient>10.0</NumeratorCoefficient>
+              <NumeratorCoefficient>20.0</NumeratorCoefficient>
+              <NumeratorCoefficient>35.0</NumeratorCoefficient>
+              <NumeratorCoefficient>56.0</NumeratorCoefficient>
+              <NumeratorCoefficient>84.0</NumeratorCoefficient>
+              <NumeratorCoefficient>120.0</NumeratorCoefficient>
+              <NumeratorCoefficient>161.0</NumeratorCoefficient>
+              <NumeratorCoefficient>204.0</NumeratorCoefficient>
+              <NumeratorCoefficient>246.0</NumeratorCoefficient>
+              <NumeratorCoefficient>284.0</NumeratorCoefficient>
+              <NumeratorCoefficient>315.0</NumeratorCoefficient>
+              <NumeratorCoefficient>336.0</NumeratorCoefficient>
+              <NumeratorCoefficient>344.0</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">204800.0</InputSampleRate>
+              <Factor>8</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="5">
+            <FIR name="HL.ATH..HHZ.2018.303.00.00.00.stage_5" resourceId="ResponseFIR/20251217211827.802145.73">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>8192.0</NumeratorCoefficient>
+              <NumeratorCoefficient>98304.0</NumeratorCoefficient>
+              <NumeratorCoefficient>540672.0</NumeratorCoefficient>
+              <NumeratorCoefficient>1802240.0</NumeratorCoefficient>
+              <NumeratorCoefficient>4055040.0</NumeratorCoefficient>
+              <NumeratorCoefficient>6488060.0</NumeratorCoefficient>
+              <NumeratorCoefficient>7569410.0</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">25600.0</InputSampleRate>
+              <Factor>128</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="6">
+            <FIR name="HL.ATH..HHZ.2018.303.00.00.00.stage_6" resourceId="ResponseFIR/20251217211827.802311.74">
+              <InputUnits>
+                <Name>COUNTS</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <Symmetry>ODD</Symmetry>
+              <NumeratorCoefficient>-26.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-247.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-822.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-1362.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-839.0</NumeratorCoefficient>
+              <NumeratorCoefficient>1012.0</NumeratorCoefficient>
+              <NumeratorCoefficient>2197.0</NumeratorCoefficient>
+              <NumeratorCoefficient>212.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-3443.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-3077.0</NumeratorCoefficient>
+              <NumeratorCoefficient>3156.0</NumeratorCoefficient>
+              <NumeratorCoefficient>7168.0</NumeratorCoefficient>
+              <NumeratorCoefficient>256.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-10709.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-7644.0</NumeratorCoefficient>
+              <NumeratorCoefficient>10713.0</NumeratorCoefficient>
+              <NumeratorCoefficient>18055.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-3873.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-28007.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-11826.0</NumeratorCoefficient>
+              <NumeratorCoefficient>31641.0</NumeratorCoefficient>
+              <NumeratorCoefficient>35194.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-22177.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-60427.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-5404.0</NumeratorCoefficient>
+              <NumeratorCoefficient>77065.0</NumeratorCoefficient>
+              <NumeratorCoefficient>51056.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-71982.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-106905.0</NumeratorCoefficient>
+              <NumeratorCoefficient>33416.0</NumeratorCoefficient>
+              <NumeratorCoefficient>156296.0</NumeratorCoefficient>
+              <NumeratorCoefficient>43678.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-175718.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-152409.0</NumeratorCoefficient>
+              <NumeratorCoefficient>139856.0</NumeratorCoefficient>
+              <NumeratorCoefficient>270573.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-29083.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-360427.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-162173.0</NumeratorCoefficient>
+              <NumeratorCoefficient>371807.0</NumeratorCoefficient>
+              <NumeratorCoefficient>417807.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-246840.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-693181.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-78388.0</NumeratorCoefficient>
+              <NumeratorCoefficient>902497.0</NumeratorCoefficient>
+              <NumeratorCoefficient>685231.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-865217.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-1713560.0</NumeratorCoefficient>
+              <NumeratorCoefficient>-262.0</NumeratorCoefficient>
+              <NumeratorCoefficient>3276210.0</NumeratorCoefficient>
+              <NumeratorCoefficient>4950470.0</NumeratorCoefficient>
+            </FIR>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">200.0</InputSampleRate>
+              <Factor>2</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

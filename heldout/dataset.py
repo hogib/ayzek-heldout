@@ -120,11 +120,41 @@ def stations_csv(path, rows):
                     f"{_dec(r['elevation_m'], 1)}\n")
 
 
-def gains(inventory, chosen):
+# Pd divides displacement by one number per channel, so the response must be
+# that number across Pd's band: every |R(f)| / sensitivity (output velocity) at
+# FLAT_FREQS within FLAT_BAND. On the tuning sets 16 of 166 Greek HHZ epochs
+# fail (HA.AMPE: the sensitivity is stated at 0.05 Hz, below a 1 Hz corner, and
+# the response at 1 Hz is 283 times it; short-period sensors such as HA.SNT5;
+# inconsistent metadata such as HT.KAVA), none of KO's 144 or New Zealand's 73.
+# A station without a gain is not measured for Pd (17-pd-magnitude.md, 5).
+FLAT_FREQS = (0.1, 0.2, 0.5, 1.0, 2.0, 5.0)
+FLAT_BAND = (0.8, 1.25)
+
+
+def flatness(channel):
+    """None if the channel's velocity response is flat over FLAT_FREQS relative
+    to its instrument sensitivity, else why not."""
+    try:
+        s = float(channel.response.instrument_sensitivity.value)
+        r = abs(channel.response.get_evalresp_response_for_frequencies(list(FLAT_FREQS),
+                                                                        output="VEL"))
+    except Exception as e:  # noqa: BLE001  an incomplete response is refused
+        return f"response not evaluable ({type(e).__name__})"
+    if not s > 0:
+        return f"sensitivity {s:g}"
+    ratios = [float(x) / s for x in r]
+    if all(FLAT_BAND[0] <= q <= FLAT_BAND[1] for q in ratios):
+        return None
+    return ("response not flat: |R|/sensitivity "
+            + ", ".join(f"{q:.3g} at {f:g} Hz" for f, q in zip(FLAT_FREQS, ratios)))
+
+
+def gains(inventory, chosen, refused=None):
     """Every epoch of each chosen station's vertical HH channel at its location.
 
     Same rule as ayzek's tools/export_pd.py: the instrument sensitivity, input
-    units m/s, start and end as epoch seconds (end empty if open)."""
+    units m/s, start and end as epoch seconds (end empty if open); and only for
+    a flat response (flatness), the others listed in `refused` with the reason."""
     want = {(r["network"], r["station"]): r["location"] for r in chosen}
     rows = []
     for net in inventory:
@@ -137,6 +167,14 @@ def gains(inventory, chosen):
                 if c.code != "HHZ" or c.location_code != loc or s is None:
                     continue
                 if (s.input_units or "").upper().replace(" ", "") != "M/S":
+                    continue
+                why = flatness(c)
+                if why is not None:
+                    if refused is not None:
+                        refused.append({"network": net.code, "station": sta.code,
+                                        "location": c.location_code, "channel": c.code,
+                                        "start": c.start_date.isoformat() if c.start_date else "",
+                                        "reason": why})
                     continue
                 rows.append({"station": sta.code, "channel": c.code,
                              "start": c.start_date.timestamp if c.start_date else 0.0,
