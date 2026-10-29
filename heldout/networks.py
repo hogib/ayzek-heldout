@@ -76,6 +76,36 @@ NETWORKS = {
                   "Digital Seismograph Networks. doi:10.7914/SN/HT"),
         licence="CC BY 4.0 (NOA EIDA node: content shared from its services)",
         catalog_citation="NOA Institute of Geodynamics, FDSNWS-event at eida.gein.noa.gr"),
+    "HA": Network(
+        code="HA", name="Hellenic Seismological Network, University of Athens",
+        base_url=NOA,
+        availability=f"{NOA}/fdsnws/availability/1/query", day_listing=None,
+        catalog="fdsn", event_url=f"{NOA}/fdsnws/event/1/query",
+        catalog_agency="NOA (National Observatory of Athens, Institute of Geodynamics)",
+        citation=("National and Kapodistrian University of Athens (2008). International Federation of Digital "
+                  "Seismograph Networks. doi:10.7914/SN/HA"),
+        licence="CC BY 4.0 (NOA EIDA node: content shared from its services)",
+        catalog_citation="NOA Institute of Geodynamics, FDSNWS-event at eida.gein.noa.gr"),
+    "HP": Network(
+        code="HP", name="University of Patras Seismological Network",
+        base_url=NOA,
+        availability=f"{NOA}/fdsnws/availability/1/query", day_listing=None,
+        catalog="fdsn", event_url=f"{NOA}/fdsnws/event/1/query",
+        catalog_agency="NOA (National Observatory of Athens, Institute of Geodynamics)",
+        citation=("University of Patras, Geology Department (2000). International Federation of Digital "
+                  "Seismograph Networks. doi:10.7914/SN/HP"),
+        licence="CC BY 4.0 (NOA EIDA node: content shared from its services)",
+        catalog_citation="NOA Institute of Geodynamics, FDSNWS-event at eida.gein.noa.gr"),
+    "HC": Network(
+        code="HC", name="Seismological Network of Crete",
+        base_url=NOA,
+        availability=f"{NOA}/fdsnws/availability/1/query", day_listing=None,
+        catalog="fdsn", event_url=f"{NOA}/fdsnws/event/1/query",
+        catalog_agency="NOA (National Observatory of Athens, Institute of Geodynamics)",
+        citation=("Technological Educational Institute of Crete (2006). International Federation of Digital "
+                  "Seismograph Networks. doi:10.7914/SN/HC"),
+        licence="CC BY 4.0 (NOA EIDA node: content shared from its services)",
+        catalog_citation="NOA Institute of Geodynamics, FDSNWS-event at eida.gein.noa.gr"),
     "NZ": Network(
         code="NZ", name="New Zealand National Seismograph Network (GeoNet)",
         base_url=GEONET, availability=None, day_listing=GEONET_BUCKET,

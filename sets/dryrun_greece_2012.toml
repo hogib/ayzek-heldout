@@ -1,0 +1,10 @@
+# Dry run of the whole chain on Greece before the freeze: 30 min of the five
+# Greek networks around Athens on 2012-06-01, before the held-out pool (2018
+# on). For plumbing only: ayzek runs with scoring off; no catalogue.
+name = "dryrun_greece_2012"
+network = ["HL", "HT", "HA", "HP", "HC"]
+start = "2012-06-01T12:00:00"
+end = "2012-06-01T12:30:00"
+centre = [37.97384, 23.71767]
+radius_km = 150.0
+max_stations = 8

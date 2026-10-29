@@ -1,0 +1,10 @@
+# Dry run of the whole chain on New Zealand before the freeze: 30 min around
+# Wellington on 2012-06-01, before the held-out pool (2018 on). For plumbing
+# only: ayzek runs with scoring off; no catalogue.
+name = "dryrun_nz_2012"
+network = "NZ"
+start = "2012-06-01T12:00:00"
+end = "2012-06-01T12:30:00"
+centre = [-41.28, 174.77]
+radius_km = 150.0
+max_stations = 8
