@@ -1,11 +1,12 @@
-# Service check, not a test set: one minute of one station (HT.THE) on
-# 2012-06-01, before the held-out pool (2018 on).
+# Service check, not a test set: one minute of one station (HT.XOR) on
+# 2012-06-01, before the held-out pool (2018 on). THE, the first choice,
+# has no data that day (availability), so no request was made for it.
 # HT shares the NOA node's event service with HL, which smoke_hl_2012
 # checks; no catalogue is fetched for this set.
 name = "smoke_ht_2012"
 network = "HT"
 start = "2012-06-01T12:00:00"
 end = "2012-06-01T12:01:00"
-centre = [40.6319, 22.9628]
+centre = [39.36598, 23.19178]
 radius_km = 3.0
 max_stations = 1
