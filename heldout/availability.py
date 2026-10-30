@@ -45,14 +45,37 @@ def parse_spans(text, t0, t1):
     return cover
 
 
+CHUNK = dt.timedelta(days=366)
+
+
+def chunks(t0, t1, step=CHUNK):
+    """[t0, t1) cut into consecutive pieces of at most `step`."""
+    a = t0
+    while a < t1:
+        b = min(a + step, t1)
+        yield a, b
+        a = b
+
+
 def fdsn_coverage(url, net, sta, loc, channels, t0, t1):
-    """Fraction of [t0, t1) covered on each channel, from fdsnws/availability."""
-    q = urllib.parse.urlencode({
-        "net": net, "sta": sta, "loc": loc or "--", "cha": ",".join(channels),
-        "starttime": t0.strftime("%Y-%m-%dT%H:%M:%S"),
-        "endtime": t1.strftime("%Y-%m-%dT%H:%M:%S"), "format": "text"})
-    _, body = _get(f"{url}?{q}")
-    cover = parse_spans(body.decode(), t0, t1)
+    """Fraction of [t0, t1) covered on each channel, from fdsnws/availability.
+
+    Requested one year at a time (`chunks`): NOA's node answers a station's
+    four-year listing in anything from seconds to beyond the 300 s read
+    timeout, and the same station then fails every retry, while each year
+    comes back in about a second (seen 2026-10-30, the Greek pool's
+    selection). A span the service returns whole across a piece's bounds is
+    clipped to that piece, so the pieces add up without overlap.
+    """
+    cover = defaultdict(float)
+    for a, b in chunks(t0, t1):
+        q = urllib.parse.urlencode({
+            "net": net, "sta": sta, "loc": loc or "--", "cha": ",".join(channels),
+            "starttime": a.strftime("%Y-%m-%dT%H:%M:%S"),
+            "endtime": b.strftime("%Y-%m-%dT%H:%M:%S"), "format": "text"})
+        _, body = _get(f"{url}?{q}")
+        for k, v in parse_spans(body.decode(), a, b).items():
+            cover[k] += v
     span = (t1 - t0).total_seconds()
     return {c: min(1.0, cover.get((loc, c), 0.0) / span) for c in channels}
 

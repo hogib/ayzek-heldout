@@ -159,6 +159,23 @@ to reach that lookup (a copy of the models directory with the rows appended,
 or an ayzek option to read them from the set); `SURVEY.md` lists the codes
 that collide with codes ayzek already holds.
 
+## Changes after the freeze
+
+The release ayzek v1.0.0 (2026-10-30) names this repository at commit
+`440a2d9` as the fetch tool. Changes since, each a change to how the tool
+talks to a service and not to what it selects or writes:
+
+- `fdsn_coverage` asks fdsnws/availability for one year at a time and adds
+  the pieces (`availability.chunks`). On 2026-10-30, NOA's node answered some
+  stations' four-year listings in a few seconds and others not within the
+  300 s read timeout, and such a station then failed every retry, so the
+  Greek pool's `heldout select` died in its availability stage on four
+  attempts (`logs/select_greece_now.failed1.log` and the attempts in
+  `logs/select_greece_now.log`); each year on its own comes back in about a
+  second. The coverage fraction is the same quantity, computed from the same
+  listings. KO's selection (`selections/ko_now`) and every set fetched before
+  this change ran at `440a2d9`.
+
 ## Open points
 
 - AUTH publishes its catalogue only as flat text files
