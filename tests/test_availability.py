@@ -2,6 +2,9 @@
 without counting a span twice where the service returns it whole on both
 sides of a piece's bound."""
 import datetime as dt
+import urllib.parse
+
+import pytest
 
 from heldout import availability
 
@@ -23,7 +26,7 @@ def test_fdsn_coverage_sums_pieces_without_overlap(monkeypatch):
     full = "2022-06-01T00:00:00", "2025-06-01T00:00:00"   # one span across every piece
     urls = []
 
-    def fake_get(url):
+    def fake_get(url, what=None):
         urls.append(url)
         # the service returns the whole span, not clipped to the request
         return 200, "".join(LINE.format(cha=c, a=full[0], b=full[1])
@@ -38,10 +41,57 @@ def test_fdsn_coverage_sums_pieces_without_overlap(monkeypatch):
 
 def test_fdsn_coverage_partial_piece(monkeypatch):
     t0, t1 = dt.datetime(2023, 1, 1), dt.datetime(2024, 12, 31)
-    def fake_get(url):
+    def fake_get(url, what=None):
         # data only in the first half of 2023
         return 200, LINE.format(cha="HHZ", a="2023-01-01T00:00:00", b="2023-07-02T00:00:00").encode()
     monkeypatch.setattr(availability, "_get", fake_get)
     cov = availability.fdsn_coverage("http://x", "HL", "ATH", "", ["HHZ"], t0, t1)
     # 182 days of 730, and the second piece returns the same span, which lies outside it
     assert abs(cov["HHZ"] - 182 / 730) < 1e-9
+
+
+def test_a_piece_the_service_never_answers_is_halved(monkeypatch, capsys):
+    t0, t1 = dt.datetime(2023, 1, 1), dt.datetime(2024, 1, 1)
+    monkeypatch.setattr(availability.retry, "_sleep", lambda s: None)
+    asked = []
+
+    def fake_get(url, what=None):
+        q = urllib.parse.parse_qs(url.split("?")[1])
+        a, b = q["starttime"][0], q["endtime"][0]
+        asked.append((a[:10], b[:10]))
+        if (a[:10], b[:10]) == ("2023-01-01", "2024-01-01"):
+            raise TimeoutError("The read operation timed out")   # the whole year, every time
+        return 200, LINE.format(cha="HHZ", a=a, b=b).encode()   # the piece, fully covered
+
+    monkeypatch.setattr(availability, "_get",
+                        lambda url, what=None: availability.retry.call(fake_get, url, what, what=what))
+    cov = availability.fdsn_coverage("http://x", "HL", "MET1", "", ["HHZ"], t0, t1)
+    assert cov == {"HHZ": 1.0}
+    assert asked.count(("2023-01-01", "2024-01-01")) == len(availability.retry.WAITS) + 1
+    assert ("2023-01-01", "2023-07-02") in asked and ("2023-07-02", "2024-01-01") in asked
+    err = capsys.readouterr().err
+    assert "HL.MET1 availability 2023-01-01..2024-01-01: TimeoutError after every retry; halving" in err
+
+
+def test_halving_stops_at_the_smallest_piece(monkeypatch):
+    t0, t1 = dt.datetime(2023, 1, 1), dt.datetime(2023, 1, 15)
+    monkeypatch.setattr(availability.retry, "_sleep", lambda s: None)
+
+    def fake_get(url, what=None):
+        raise TimeoutError("timed out")
+    monkeypatch.setattr(availability, "_get",
+                        lambda url, what=None: availability.retry.call(fake_get, url, what, what=what))
+    with pytest.raises(TimeoutError):
+        availability.fdsn_coverage("http://x", "HL", "MET1", "", ["HHZ"], t0, t1)
+
+
+def test_an_answer_is_not_halved(monkeypatch):
+    """A refusal (4xx) is raised at once, not split."""
+    import urllib.error
+    t0, t1 = dt.datetime(2023, 1, 1), dt.datetime(2024, 1, 1)
+
+    def fake_get(url, what=None):
+        raise urllib.error.HTTPError(url, 400, "bad", {}, None)
+    monkeypatch.setattr(availability, "_get", fake_get)
+    with pytest.raises(urllib.error.HTTPError):
+        availability.fdsn_coverage("http://x", "HL", "MET1", "", ["HHZ"], t0, t1)

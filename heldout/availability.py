@@ -8,6 +8,7 @@ or contents, so for NZ coverage is an upper bound at day resolution.
 """
 import datetime as dt
 import re
+import sys
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -17,7 +18,7 @@ from collections import defaultdict
 from . import retry
 
 
-def _get(url):
+def _get(url, what=None):
     def once():
         try:
             with urllib.request.urlopen(url, timeout=300) as f:
@@ -26,7 +27,7 @@ def _get(url):
             if e.code in (204, 404):
                 return e.code, b""
             raise
-    return retry.call(once, what=url.split("?")[0])
+    return retry.call(once, what=what or url.split("?")[0])
 
 
 def parse_spans(text, t0, t1):
@@ -46,6 +47,7 @@ def parse_spans(text, t0, t1):
 
 
 CHUNK = dt.timedelta(days=366)
+MIN_PIECE = dt.timedelta(days=7)  # a listing is not asked for in smaller pieces than this
 
 
 def chunks(t0, t1, step=CHUNK):
@@ -65,17 +67,34 @@ def fdsn_coverage(url, net, sta, loc, channels, t0, t1):
     timeout, and the same station then fails every retry, while each year
     comes back in about a second (seen 2026-10-30, the Greek pool's
     selection). A span the service returns whole across a piece's bounds is
-    clipped to that piece, so the pieces add up without overlap.
+    clipped to that piece, so the pieces add up without overlap. A piece the
+    service still does not answer within the retries is asked for in halves,
+    down to MIN_PIECE; the retry messages name the station and the piece.
     """
     cover = defaultdict(float)
-    for a, b in chunks(t0, t1):
+
+    def piece(a, b):
         q = urllib.parse.urlencode({
             "net": net, "sta": sta, "loc": loc or "--", "cha": ",".join(channels),
             "starttime": a.strftime("%Y-%m-%dT%H:%M:%S"),
             "endtime": b.strftime("%Y-%m-%dT%H:%M:%S"), "format": "text"})
-        _, body = _get(f"{url}?{q}")
+        what = f"{net}.{sta} availability {a:%Y-%m-%d}..{b:%Y-%m-%d}"
+        try:
+            _, body = _get(f"{url}?{q}", what=what)
+        except Exception as e:  # noqa: BLE001  retries exhausted on a passing failure
+            if not retry.transient(e) or b - a <= MIN_PIECE:
+                raise
+            # a listing the service does not finish in time: ask for half of it
+            print(f"  {what}: {type(e).__name__} after every retry; halving", file=sys.stderr)
+            m = a + (b - a) / 2
+            piece(a, m)
+            piece(m, b)
+            return
         for k, v in parse_spans(body.decode(), a, b).items():
             cover[k] += v
+
+    for a, b in chunks(t0, t1):
+        piece(a, b)
     span = (t1 - t0).total_seconds()
     return {c: min(1.0, cover.get((loc, c), 0.0) / span) for c in channels}
 

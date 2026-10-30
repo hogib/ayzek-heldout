@@ -180,6 +180,11 @@ talks to a service and not to what it selects or writes:
   at once: with the yearly pieces, NOA's node still answered 502 or nothing to
   both of the tool's threads for stretches longer than the earlier 8 minutes,
   about an hour into each run, and the run died (`logs/select_greece_now.failed6-7.log`).
+- A year's listing the service does not answer within those 33 minutes is
+  asked for in halves, down to a week (`availability.MIN_PIECE`), and the
+  retry messages name the station and the piece: with one request at a time
+  a run still died 33 minutes into one request, about an hour in
+  (`logs/select_greece_now.failed8.log`), without saying which.
 
 ## Open points
 
