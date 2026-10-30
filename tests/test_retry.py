@@ -33,12 +33,14 @@ def http_error(code):
 
 
 def test_passing_failures_are_retried_with_the_arguments(waits):
-    request = failing(ConnectionResetError("reset by peer"),
-                      FDSNBadGatewayException("502 Proxy Error"),
-                      FDSNException("Unknown Error (RemoteDisconnected): Remote end closed"),
-                      FDSNTimeoutException("Timed Out"),
-                      FDSNServiceUnavailableException("503"),
-                      http.client.IncompleteRead(b""))
+    kinds = [ConnectionResetError("reset by peer"),
+             FDSNBadGatewayException("502 Proxy Error"),
+             FDSNException("Unknown Error (RemoteDisconnected): Remote end closed"),
+             FDSNTimeoutException("Timed Out"),
+             FDSNServiceUnavailableException("503")]
+    # one failure per wait, then one more: the last is raised
+    errors = [kinds[i % len(kinds)] for i in range(len(retry.WAITS))]
+    request = failing(*errors, http.client.IncompleteRead(b""))
     with pytest.raises(http.client.IncompleteRead):
         retry.call(request, "HL", what="x")
     assert waits == list(retry.WAITS)

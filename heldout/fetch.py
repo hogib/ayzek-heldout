@@ -80,8 +80,9 @@ def coverage(cfg, rows):
         def one(r):
             return availability.fdsn_coverage(info.availability, r["network"], r["station"],
                                               r["location"], r["channels"], cfg.start, cfg.end)
-        with ThreadPoolExecutor(2) as ex:
-            covs = list(ex.map(one, rows))
+        # one request at a time: NOA's node sheds load from a client that keeps
+        # two going for long (2026-10-30, the Greek pool's selection)
+        covs = [one(r) for r in rows]
         basis = "fdsnws/availability"
     else:
         days = list(availability.days_of(cfg.start, cfg.end))

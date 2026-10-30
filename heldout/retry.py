@@ -2,7 +2,10 @@
 
 A request that fails with a server error, a timeout or a dropped connection is
 made again after each of WAITS; one the service answers (no data, a malformed
-or unauthorised request) is not. A failure that outlasts every wait is raised,
+or unauthorised request) is not. The waits were 5, 15, 45, 120 and 300 s until
+2026-10-30, when NOA's node, under a long run of availability requests, began
+answering 502 or nothing for stretches longer than those 8 minutes; five more
+waits of 300 s outlast such a stretch. A failure that outlasts every wait is raised,
 so that a set is complete or reported as failed, never short by what an outage
 of a few minutes withheld.
 """
@@ -11,7 +14,7 @@ import sys
 import time
 import urllib.error
 
-WAITS = (5, 15, 45, 120, 300)  # s, 8 min 5 s in all
+WAITS = (5, 15, 45, 120, 300, 300, 300, 300, 300, 300)  # s, 33 min 5 s in all
 _sleep = time.sleep
 
 

@@ -175,6 +175,11 @@ talks to a service and not to what it selects or writes:
   second. The coverage fraction is the same quantity, computed from the same
   listings. KO's selection (`selections/ko_now`) and every set fetched before
   this change ran at `440a2d9`.
+- The retries wait 33 minutes in all per request (five more waits of 300 s),
+  and the probe's availability requests are made one at a time instead of two
+  at once: with the yearly pieces, NOA's node still answered 502 or nothing to
+  both of the tool's threads for stretches longer than the earlier 8 minutes,
+  about an hour into each run, and the run died (`logs/select_greece_now.failed6-7.log`).
 
 ## Open points
 
