@@ -186,6 +186,22 @@ talks to a service and not to what it selects or writes:
   a run still died 33 minutes into one request, about an hour in
   (`logs/select_greece_now.failed8.log`), without saying which.
 
+What ran at which commit (the tool stamps HEAD when it writes, so a stamp
+can postdate the code that ran): KO's selection and sets, `440a2d9`. New
+Zealand's selection ran the code of `440a2d9` from 2026-10-30 13:00 UTC and
+wrote at 23:03 UTC, stamped `6fda3e2`; none of the changes above is on its
+path (GeoNet has no availability service, and no request of its exhausted
+the earlier waits); its sets were fetched at `6fda3e2`. Greece's selection
+and sets, `6fda3e2`; the successful selection (2026-10-30 22:33 to 10-31
+06:42 UTC) needed no halving, and was paused with SIGSTOP from 02:43 to
+02:47 UTC while NOA's event service answered 503 to everything, so that the
+retries did not run out; a pause changes no request and no answer. In two
+Greek sequence sets a chosen station had no data in the 3 h window
+(`greece_now_seq004` HL.ZKR, `greece_now_seq020` HT.KOKK; coverage 0 in the
+probe, "nothing" in the pull): both are usable over the pool by the
+protocol's rule, and the sets go on with 5 and 7 stations, as `dataset.json`
+records. Every set of the three pools passes `heldout verify`.
+
 ## Open points
 
 - AUTH publishes its catalogue only as flat text files
