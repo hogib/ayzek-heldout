@@ -261,3 +261,8 @@ between the two commits.
 - The catalogue format follows `load_afad_catalog` (`src/pipeline/network.cpp`)
   and `tests/catalogs/demo_ko.csv`; the 512-byte record requirement follows
   `src/mseed.hpp`. No code is copied from them.
+
+## License
+
+GNU General Public License, version 3 or (at your option) any later version
+(GPL-3.0-or-later); the full text is in `LICENSE`. The same licence as ayzek.
